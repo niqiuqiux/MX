@@ -123,6 +123,8 @@
     <string name="label_value_freeze">冻结</string>
     <string name="label_search_all_memory">在全部内存中</string>
     <string name="button_new_search">新搜索</string>
+    <string name="button_search">搜索</string>
+    <string name="button_refine">改善</string>
     <string name="description_auto_type" tools:ignore="TypographyDashes">A: Auto (–1.8e+308 - 1.8e+308)</string>
     <string name="label_type">类型：</string>
     <string name="content_desc_convert_hex">转换进制</string>

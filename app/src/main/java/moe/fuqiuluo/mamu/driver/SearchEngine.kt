@@ -6,6 +6,28 @@ import moe.fuqiuluo.mamu.floating.ext.divideToSimpleMemoryRange
 import moe.fuqiuluo.mamu.floating.model.DisplayValueType
 import moe.fuqiuluo.mamu.floating.model.MemoryRange
 
+/**
+ * 搜索模式枚举
+ * 对应 Rust 层的 SearchResultMode
+ */
+enum class SearchMode(val nativeValue: Int) {
+    /**
+     * 精确搜索（包含联合搜索/范围搜索）
+     */
+    EXACT(0),
+
+    /**
+     * 模糊搜索
+     */
+    FUZZY(1);
+
+    companion object {
+        fun fromNativeValue(value: Int): SearchMode {
+            return entries.firstOrNull { it.nativeValue == value } ?: EXACT
+        }
+    }
+}
+
 object SearchEngine {
     /**
      * 初始化搜索引擎
@@ -147,6 +169,39 @@ object SearchEngine {
         nativeClearFilter()
     }
 
+    /**
+     * 获取当前搜索模式
+     * @return 当前搜索模式 (EXACT 或 FUZZY)
+     */
+    fun getCurrentSearchMode(): SearchMode {
+        val nativeValue = nativeGetCurrentSearchMode()
+        return SearchMode.fromNativeValue(nativeValue)
+    }
+
+    /**
+     * 改善搜索 - 基于上一次搜索结果进行再次搜索
+     *
+     * 典型使用场景：
+     * 1. 第一次搜索金币数量 100 → 找到 10000 个地址
+     * 2. 改变游戏中的金币到 150
+     * 3. 改善搜索: 在上一次的 10000 个地址中，再搜索值为 150 的地址 → 缩小到 50 个地址
+     * 4. 继续改变金币到 200，再次改善搜索 → 最终定位到 1-2 个地址
+     *
+     * @param query 搜索内容
+     * @param type 数据类型
+     * @param memoryMode 内存搜索模式
+     * @param cb 搜索进度回调
+     * @return 搜索到的结果数量
+     */
+    fun refineSearch(
+        query: String,
+        type: DisplayValueType,
+        memoryMode: Int,
+        cb: SearchProgressCallback
+    ): Long {
+        return nativeRefineSearch(query, type.nativeId, memoryMode, cb)
+    }
+
     private external fun nativeInitSearchEngine(bufferSize: Long, cacheFileDir: String, chunkSize: Long): Boolean
     private external fun nativeSearch(
         query: String,
@@ -169,4 +224,25 @@ object SearchEngine {
         typeIds: IntArray,
     )
     private external fun nativeClearFilter()
+
+    /**
+     * 获取当前搜索模式（native）
+     * @return 搜索模式的原生值 (0=EXACT, 1=FUZZY)
+     */
+    private external fun nativeGetCurrentSearchMode(): Int
+
+    /**
+     * 改善搜索（native）- 基于上一次搜索结果进行再次搜索
+     * @param query 搜索内容
+     * @param defaultType 数据类型ID
+     * @param memoryMode 内存搜索模式
+     * @param cb 搜索进度回调
+     * @return 搜索到的结果数量
+     */
+    private external fun nativeRefineSearch(
+        query: String,
+        defaultType: Int,
+        memoryMode: Int,
+        cb: SearchProgressCallback
+    ): Long
 }

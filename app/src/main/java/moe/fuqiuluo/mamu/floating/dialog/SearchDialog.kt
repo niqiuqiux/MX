@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +39,8 @@ class SearchDialog(
     private val notification: NotificationOverlay,
     private val searchDialogState: SearchDialogState,
     private val clipboardManager: ClipboardManager,
-    private val onSearchCompleted: ((ranges: List<DisplayMemRegionEntry>) -> Unit)? = null
+    private val onSearchCompleted: ((ranges: List<DisplayMemRegionEntry>) -> Unit)? = null,
+    private val onRefineCompleted: (() -> Unit)? = null
 ) : BaseDialog(context) {
     private val searchScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var searchRanges: List<DisplayMemRegionEntry>
@@ -64,7 +66,25 @@ class SearchDialog(
                     onSearchCompleted?.invoke(searchRanges)
                 }
             }
+        }
+    }
 
+    private inner class RefineSearchCallback : SearchProgressCallback {
+        override fun onSearchComplete(
+            totalFound: Long,
+            totalRegions: Int,
+            elapsedMillis: Long
+        ) {
+            searchScope.launch(Dispatchers.Main) {
+                notification.showSuccess(
+                    context.getString(
+                        R.string.success_search_complete,
+                        totalFound,
+                        elapsedMillis
+                    )
+                )
+                onRefineCompleted?.invoke()
+            }
         }
     }
 
@@ -213,27 +233,46 @@ class SearchDialog(
             }
         }
 
-        binding.btnCancel.setOnClickListener {
-            searchDialogState.lastInputValue = binding.inputValue.text.toString()
-            onCancel?.invoke()
-            dialog.dismiss()
+        // 检查是否有搜索结果，动态设置按钮布局
+        val hasResults = SearchEngine.getTotalResultCount() > 0
+
+        if (hasResults) {
+            // 有结果时：[新搜索] [取消] [改善]
+            binding.btnNewSearch?.visibility = View.VISIBLE
+            binding.buttonSpacer?.visibility = View.VISIBLE
+            binding.btnConfirm.text = context.getString(R.string.button_refine)
+        } else {
+            // 无结果时：[取消] [搜索]
+            binding.btnNewSearch?.visibility = View.GONE
+            binding.buttonSpacer?.visibility = View.GONE
+            binding.btnConfirm.text = context.getString(R.string.button_search)
         }
 
-        binding.btnConfirm.setOnClickListener {
-            val expression = binding.inputValue.text.toString().trim()
-            val valueType = currentValueType
+        val mmkv = MMKV.defaultMMKV()
+        val memoryMode = mmkv.memoryAccessMode
 
+        // 执行搜索的通用函数
+        val preCheck: (String) -> Boolean = preCheck@{ expression ->
             if (expression.isEmpty()) {
-                notification.showError(context.getString(moe.fuqiuluo.mamu.R.string.error_empty_search_value))
-                return@setOnClickListener
+                notification.showError(context.getString(R.string.error_empty_search_value))
+                return@preCheck false
             }
 
             searchDialogState.lastInputValue = expression
             dialog.dismiss()
 
+            return@preCheck true
+        }
+        val performSearch: () -> Unit = performSearch@{
+            val expression = binding.inputValue.text.toString().trim()
+            val valueType = currentValueType
+
+            if (!preCheck(expression)) {
+                return@performSearch
+            }
+
             searchScope.launch {
-                val mmkv = MMKV.defaultMMKV()
-                val memoryMode = mmkv.memoryAccessMode
+                SearchEngine.clearSearchResults()
                 val ranges = mmkv.selectedMemoryRanges
 
                 val nativeRegions = mutableListOf<Long>()
@@ -249,6 +288,7 @@ class SearchDialog(
                     }
 
                 runCatching {
+                    // 普通搜索：在指定内存区域中搜索
                     SearchEngine.exactSearchWithCustomRange(
                         expression,
                         valueType,
@@ -259,6 +299,48 @@ class SearchDialog(
                 }.onFailure {
                     Log.e(TAG, "搜索失败", it)
                 }
+            }
+        }
+        val refineSearch: () -> Unit = refineSearch@ {
+            val expression = binding.inputValue.text.toString().trim()
+            val valueType = currentValueType
+
+            if (!preCheck(expression)) {
+                return@refineSearch
+            }
+
+            searchScope.launch {
+                runCatching {
+                    // 改善搜索：基于上一次搜索结果进行再次搜索
+                    SearchEngine.refineSearch(
+                        expression,
+                        valueType,
+                        memoryMode,
+                        RefineSearchCallback()
+                    )
+                }.onFailure {
+                    Log.e(TAG, "改善搜索失败", it)
+                }
+            }
+        }
+
+        binding.btnCancel.setOnClickListener {
+            searchDialogState.lastInputValue = binding.inputValue.text.toString()
+            onCancel?.invoke()
+            dialog.dismiss()
+        }
+
+        // 新搜索按钮：清除旧结果并进行全新搜索
+        binding.btnNewSearch?.setOnClickListener {
+            performSearch()
+        }
+
+        // 搜索/改善按钮
+        binding.btnConfirm.setOnClickListener {
+            if (hasResults) {
+                refineSearch()
+            } else {
+                performSearch()
             }
         }
     }

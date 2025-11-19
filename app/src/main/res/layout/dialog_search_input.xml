@@ -200,23 +200,45 @@
         android:gravity="end"
         android:orientation="horizontal">
 
+        <!-- 新搜索按钮：仅在有搜索结果时显示，清除旧结果并进行全新搜索 -->
+        <Button
+            android:id="@+id/btn_new_search"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/button_new_search"
+            android:textColor="#FF9800"
+            android:visibility="gone" />
+
+        <!-- 占位View，使取消和改善按钮靠右 -->
+        <View
+            android:id="@+id/button_spacer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
         <Button
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:background="@android:color/transparent"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:text="@string/button_cancel"
             android:textColor="#FFFFFF" />
 
+        <!-- 搜索/改善按钮：无结果时显示"搜索"，有结果时显示"改善" -->
         <Button
             android:id="@+id/btn_confirm"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:background="@android:color/transparent"
-            android:paddingEnd="24dp"
-            android:text="@string/button_new_search"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/button_search"
             android:textColor="#2196F3" />
     </LinearLayout>
 

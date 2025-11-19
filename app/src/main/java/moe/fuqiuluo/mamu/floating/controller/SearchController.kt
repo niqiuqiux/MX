@@ -307,9 +307,26 @@ class SearchController(
             notification = notification,
             searchDialogState = searchDialogState,
             clipboardManager = clipboardManager,
-            onSearchCompleted = { onSearchCompleted(it) }
+            onSearchCompleted = { onSearchCompleted(it) },
+            onRefineCompleted = { onRefineCompleted() }
         )
         dialog.show()
+    }
+
+    private fun onRefineCompleted() {
+        val totalCount = SearchEngine.getTotalResultCount().toInt()
+
+        val mmkv = MMKV.defaultMMKV()
+        if (totalCount > 0) {
+            val itemCountPerPage = mmkv.searchPageSize
+            val limit = itemCountPerPage.coerceAtMost(totalCount)
+            updateSearchResultCount(itemCountPerPage, totalCount)
+            loadSearchResults(limit = limit)
+        } else {
+            searchResultAdapter.clearResults()
+            updateSearchResultCount(0, null)
+            showEmptyState(true)
+        }
     }
 
     private fun showFilterDialog() {

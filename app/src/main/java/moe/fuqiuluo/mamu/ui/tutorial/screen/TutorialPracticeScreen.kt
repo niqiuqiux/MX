@@ -14,9 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import moe.fuqiuluo.mamu.driver.PracticeMemory
+import moe.fuqiuluo.mamu.driver.MemoryOps
 import moe.fuqiuluo.mamu.ui.theme.MXTheme
 
 /**
@@ -35,15 +34,15 @@ fun TutorialPracticeScreen(
 
     // 初始化内存
     DisposableEffect(Unit) {
-        val address = PracticeMemory.alloc(4) // 4 bytes for Int
+        val address = MemoryOps.alloc(4) // 4 bytes for Int
         if (address != 0UL) {
-            PracticeMemory.writeInt(address, 42)
+            MemoryOps.writeInt(address, 42)
             memoryAddress = address
         }
 
         onDispose {
             if (memoryAddress != 0UL) {
-                PracticeMemory.free(memoryAddress, 4)
+                MemoryOps.free(memoryAddress, 4)
             }
         }
     }
@@ -52,7 +51,7 @@ fun TutorialPracticeScreen(
     LaunchedEffect(memoryAddress) {
         if (memoryAddress != 0UL) {
             while (true) {
-                val value = PracticeMemory.readInt(memoryAddress)
+                val value = MemoryOps.readInt(memoryAddress)
                 if (value != currentValue) {
                     currentValue = value
                     if (value == 114514) {
@@ -134,7 +133,7 @@ fun TutorialPracticeScreen(
 
                     val steps = listOf(
                         "启动悬浮窗",
-                        "选择进程：moe.fuqiuluo.mamu (PID: ${PracticeMemory.getPid()})",
+                        "选择进程：moe.fuqiuluo.mamu (PID: ${MemoryOps.getPid()})",
                         "搜索当前值：$currentValue",
                         "使用 +1/-1 按钮改变值",
                         "再次搜索新值筛选结果",
@@ -230,7 +229,7 @@ fun TutorialPracticeScreen(
                             onClick = {
                                 if (memoryAddress != 0UL) {
                                     val newValue = currentValue - 1
-                                    PracticeMemory.writeInt(memoryAddress, newValue)
+                                    MemoryOps.writeInt(memoryAddress, newValue)
                                     currentValue = newValue
                                 }
                             }
@@ -242,7 +241,7 @@ fun TutorialPracticeScreen(
                             onClick = {
                                 if (memoryAddress != 0UL) {
                                     val newValue = currentValue + 1
-                                    PracticeMemory.writeInt(memoryAddress, newValue)
+                                    MemoryOps.writeInt(memoryAddress, newValue)
                                     currentValue = newValue
                                 }
                             }

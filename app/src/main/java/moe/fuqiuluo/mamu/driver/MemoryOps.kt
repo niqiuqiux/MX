@@ -3,11 +3,7 @@ package moe.fuqiuluo.mamu.driver
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * 练习用内存操作工具
- * 用于新手教程中的内存搜索练习
- */
-object PracticeMemory {
+object MemoryOps {
 
     /**
      * 分配指定大小的内存
