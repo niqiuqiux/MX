@@ -128,16 +128,41 @@ fun Exec.initAndroidNdkEnv() {
                 "darwin-x86_64"   // Intel Mac
             }
         }
+
         hostOs.contains("linux") -> "linux-x86_64"
         else -> throw GradleException("Unsupported host OS: $hostOs")
     }
 
-    val toolchain = "$ndkHome/toolchains/llvm/prebuilt/$ndkHostTag"
+    val toolchain = File(ndkHome)
+        .resolve("toolchains")
+        .resolve("llvm")
+        .resolve("prebuilt")
+        .resolve(ndkHostTag)
+
+    // Windows needs .cmd/.exe extensions, Unix-like systems don't
+    val isWindows = hostOs.contains("windows")
+    val clangSuffix = if (isWindows) ".cmd" else ""
+    val arSuffix = if (isWindows) ".exe" else ""
 
     environment("ANDROID_NDK_HOME", ndkHome)
-    environment("CC_aarch64_linux_android", "$toolchain/bin/aarch64-linux-android21-clang")
-    environment("AR_aarch64_linux_android", "$toolchain/bin/llvm-ar")
-    environment("CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER", "$toolchain/bin/aarch64-linux-android21-clang")
+    environment(
+        "CC_aarch64_linux_android", toolchain
+            .resolve("bin")
+            .resolve("aarch64-linux-android21-clang$clangSuffix")
+            .absolutePath
+    )
+    environment(
+        "AR_aarch64_linux_android", toolchain
+            .resolve("bin")
+            .resolve("llvm-ar$arSuffix")
+            .absolutePath
+    )
+    environment(
+        "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER", toolchain
+            .resolve("bin")
+            .resolve("aarch64-linux-android21-clang$clangSuffix")
+            .absolutePath
+    )
 }
 
 // Build Rust library for Android
@@ -165,7 +190,7 @@ tasks.register<Copy>("copyRustLibs") {
     dependsOn("buildRustAndroid")
     val isRelease = isReleaseBuild()
     val buildMode = if (isRelease) "release" else "debug"
-    from("$coreRustTargetPath/aarch64-linux-android/$buildMode") {
+    from(File(coreRustTargetPath).resolve("aarch64-linux-android").resolve(buildMode)) {
         include("*.so")
     }
     into("src/main/jniLibs/arm64-v8a")
