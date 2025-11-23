@@ -118,7 +118,8 @@ class SearchResultAdapter(
     fun selectAll() {
         selectedPositions.clear()
         selectedPositions.addAll(results.indices)
-        notifyDataSetChanged()
+        // 使用payload高效刷新，避免重新bind整个item
+        notifyItemRangeChanged(0, results.size, PAYLOAD_SELECTION_CHANGED)
         onSelectionChanged(selectedPositions.size)
     }
 
@@ -127,7 +128,8 @@ class SearchResultAdapter(
      */
     fun deselectAll() {
         selectedPositions.clear()
-        notifyItemRangeChanged(0, results.size.coerceAtMost(50), PAYLOAD_SELECTION_CHANGED)
+        // 使用payload高效刷新所有item
+        notifyItemRangeChanged(0, results.size, PAYLOAD_SELECTION_CHANGED)
         onSelectionChanged(0)
     }
 
@@ -143,7 +145,8 @@ class SearchResultAdapter(
         }
         selectedPositions.clear()
         selectedPositions.addAll(newSelection)
-        notifyDataSetChanged()
+        // 使用payload高效刷新，避免notifyDataSetChanged()
+        notifyItemRangeChanged(0, results.size, PAYLOAD_SELECTION_CHANGED)
         onSelectionChanged(selectedPositions.size)
     }
 
@@ -185,103 +188,97 @@ class SearchResultAdapter(
         fun bind(item: SearchResultItem, position: Int) {
             when (item) {
                 is ExactSearchResultItem -> {
-                    // 地址
-                    binding.addressText.text = String.format("%X", item.address)
+                    binding.apply {
+                        // 地址
+                        addressText.text = item.address.toString(16).uppercase()
 
-                    // 当前值
-                    binding.valueText.text = item.value
+                        // 当前值
+                        valueText.text = item.value
 
-                    // 类型简称和颜色
-                    val valueType = item.displayValueType ?: DisplayValueType.DWORD
-                    binding.typeText.text = valueType.code
-                    binding.typeText.setTextColor(valueType.textColor)
+                        // 类型简称和颜色
+                        val valueType = item.displayValueType ?: DisplayValueType.DWORD
+                        typeText.apply {
+                            text = valueType.code
+                            setTextColor(valueType.textColor)
+                        }
 
-                    // 内存范围简称和颜色
-                    val memoryRange = ranges?.find {
-                        it.containsAddress(item.address)
-                    }?.range ?: MemoryRange.O
-                    binding.rangeText.text = memoryRange.code
-                    binding.rangeText.setTextColor(memoryRange.color)
+                        // 内存范围简称和颜色
+                        val memoryRange = ranges?.firstOrNull { it.containsAddress(item.address) }?.range
+                            ?: MemoryRange.O
+                        rangeText.apply {
+                            text = memoryRange.code
+                            setTextColor(memoryRange.color)
+                        }
+                    }
                 }
 
                 else -> {
-                    binding.addressText.text = String.format("%X", 0L)
-                    binding.valueText.text = "0"
-                    binding.typeText.text = "?"
-                    binding.rangeText.text = "?"
+                    binding.apply {
+                        addressText.text = "0"
+                        valueText.text = "0"
+                        typeText.text = "?"
+                        rangeText.text = "?"
+                    }
                 }
             }
 
             // Checkbox选中状态
             val isSelected = position in selectedPositions
-            binding.checkbox.isChecked = isSelected
-            updateItemBackground(isSelected)
-
-            binding.checkbox.setOnCheckedChangeListener { _, isChecked ->
-                val currentPosition = bindingAdapterPosition
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    if (isChecked) {
-                        selectedPositions.add(currentPosition)
-                    } else {
-                        selectedPositions.remove(currentPosition)
+            binding.checkbox.apply {
+                setOnCheckedChangeListener(null) // 先移除监听器避免触发
+                isChecked = isSelected
+                setOnCheckedChangeListener { _, isChecked ->
+                    bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                        if (isChecked) selectedPositions.add(pos) else selectedPositions.remove(pos)
+                        updateItemBackground(isChecked)
+                        onSelectionChanged(selectedPositions.size)
                     }
-                    updateItemBackground(isChecked)
-                    onSelectionChanged(selectedPositions.size)
                 }
             }
+            updateItemBackground(isSelected)
 
             // 删除按钮
             binding.deleteButton.setOnClickListener {
-                val currentPosition = bindingAdapterPosition
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    onItemDelete(results[currentPosition])
+                bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                    onItemDelete(results[pos])
                 }
             }
 
             // Item点击事件
             binding.root.setOnClickListener {
-                val currentPosition = bindingAdapterPosition
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    onItemClick(results[currentPosition], currentPosition)
+                bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                    onItemClick(results[pos], pos)
                 }
             }
 
             // Item长按事件
             binding.root.setOnLongClickListener {
-                val currentPosition = bindingAdapterPosition
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    onItemLongClick(results[currentPosition], currentPosition)
-                } else {
-                    false
-                }
+                bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                    onItemLongClick(results[pos], pos)
+                } ?: false
             }
         }
 
         fun updateSelection(position: Int) {
             val isSelected = position in selectedPositions
-            binding.checkbox.setOnCheckedChangeListener(null)
-            binding.checkbox.isChecked = isSelected
-            updateItemBackground(isSelected)
-            binding.checkbox.setOnCheckedChangeListener { _, isChecked ->
-                val currentPosition = bindingAdapterPosition
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    if (isChecked) {
-                        selectedPositions.add(currentPosition)
-                    } else {
-                        selectedPositions.remove(currentPosition)
+            binding.checkbox.apply {
+                setOnCheckedChangeListener(null)
+                isChecked = isSelected
+                updateItemBackground(isSelected)
+                setOnCheckedChangeListener { _, isChecked ->
+                    bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                        if (isChecked) selectedPositions.add(pos) else selectedPositions.remove(pos)
+                        updateItemBackground(isChecked)
+                        onSelectionChanged(selectedPositions.size)
                     }
-                    updateItemBackground(isChecked)
-                    onSelectionChanged(selectedPositions.size)
                 }
             }
         }
 
         private fun updateItemBackground(isSelected: Boolean) {
-            if (isSelected) {
-                binding.itemContainer.setBackgroundColor(0x33448AFF)
-            } else {
-                binding.itemContainer.setBackgroundColor(0x00000000)
-            }
+            binding.itemContainer.setBackgroundColor(
+                if (isSelected) 0x33448AFF.toInt() else 0x00000000
+            )
         }
     }
 }

@@ -14,25 +14,26 @@ class ProcessListAdapter(
     private val processList: List<DisplayProcessInfo>
 ): BaseAdapter() {
     override fun getCount(): Int = processList.size
-    override fun getItem(position: Int): Any = processList[position]
+    override fun getItem(position: Int): DisplayProcessInfo = processList[position]
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val binding = if (convertView == null) {
-            ItemProcessListBinding.inflate(
-                LayoutInflater.from(context),
-                parent,
-                false
-            )
-        } else {
-            ItemProcessListBinding.bind(convertView)
+        val binding = when {
+            convertView != null -> convertView.tag as? ItemProcessListBinding
+                ?: ItemProcessListBinding.bind(convertView)
+            else -> ItemProcessListBinding.inflate(LayoutInflater.from(context), parent, false).also {
+                it.root.tag = it
+            }
         }
 
-        val processInfo = processList[position]
-        binding.processRss.text = formatBytes(processInfo.rss * 4096, 0)
-        binding.processName.text = processInfo.validName
-        binding.processDetails.text = "[${processInfo.pid}]"
-        binding.processIcon.setImageDrawable(processInfo.icon)
+        processList[position].let { processInfo ->
+            binding.apply {
+                processRss.text = formatBytes(processInfo.rss * 4096, 0)
+                processName.text = processInfo.validName
+                processDetails.text = "[${processInfo.pid}]"
+                processIcon.setImageDrawable(processInfo.icon)
+            }
+        }
 
         return binding.root
     }

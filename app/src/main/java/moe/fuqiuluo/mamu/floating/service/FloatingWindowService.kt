@@ -62,6 +62,9 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
     private lateinit var memoryPreviewController: MemoryPreviewController
     private lateinit var breakpointController: BreakpointController
 
+    // 缓存屏幕方向，避免重复调整布局
+    private var currentOrientation = Configuration.ORIENTATION_UNDEFINED
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     @SuppressLint("ClickableViewAccessibility")
@@ -203,7 +206,8 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
         // 默认显示搜索tab
         changeCurrentContent(R.id.content_search, R.id.indicator_search)
         // 初始化布局方向（根据当前屏幕方向）
-        adjustLayoutForOrientation(resources.configuration.orientation)
+        currentOrientation = resources.configuration.orientation
+        adjustLayoutForOrientation(currentOrientation)
     }
 
     private fun setupTopBar() {
@@ -313,7 +317,11 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        adjustLayoutForOrientation(newConfig.orientation)
+        // 只有方向真正改变时才调整布局，避免无谓的重建
+        if (currentOrientation != newConfig.orientation) {
+            currentOrientation = newConfig.orientation
+            adjustLayoutForOrientation(newConfig.orientation)
+        }
     }
 
     private fun adjustLayoutForOrientation(orientation: Int) {

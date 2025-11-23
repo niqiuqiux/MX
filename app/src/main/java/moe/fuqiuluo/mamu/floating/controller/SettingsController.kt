@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import com.tencent.mmkv.MMKV
+import kotlinx.coroutines.*
 import moe.fuqiuluo.mamu.R
 import moe.fuqiuluo.mamu.databinding.FloatingSettingsLayoutBinding
 import moe.fuqiuluo.mamu.driver.ProcessDeathMonitor
@@ -58,6 +59,8 @@ class SettingsController(
     private val onApplyOpacity: () -> Unit,
     private val processDeathCallback: ProcessDeathMonitor.Callback
 ) : FloatingController<FloatingSettingsLayoutBinding>(context, binding, notification) {
+
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun initialize() {
         val mmkv = MMKV.defaultMMKV()
@@ -315,90 +318,96 @@ class SettingsController(
 
     @SuppressLint("SetTextI18n", "InflateParams")
     fun showProcessSelectionDialog() {
-        runCatching {
-            val mmkv = MMKV.defaultMMKV()
-            val processList = WuwaDriver.listProcessesWithInfo().filter { process ->
+        coroutineScope.launch {
+            runCatching {
+                val mmkv = MMKV.defaultMMKV()
                 val filterSystem = mmkv.filterSystemProcess
                 val filterLinux = mmkv.filterLinuxProcess
-                if (filterSystem && ApplicationUtils.isSystemApp(context, process.uid)) {
-                    return@filter false
-                }
-                if (filterLinux && process.uid < 1000) {
-                    return@filter false
-                }
-                true
-            }.map {
-                if (it.name.isEmpty() || ApplicationUtils.isSystemApp(context, it.uid)) {
-                    val appIcon = ApplicationUtils.getAndroidIcon(context)
-                    DisplayProcessInfo(
-                        icon = appIcon,
-                        name = it.name,
-                        packageName = null,
-                        pid = it.pid,
-                        uid = it.uid,
-                        prio = 1,
-                        rss = it.rss,
-                        cmdline = it.name
-                    )
-                } else {
-                    var prio = 3
-                    val packageName = it.name.split(":").first()
-                    val appIcon = ApplicationUtils.getAppIconByPackageName(context, packageName)
-                        ?: ApplicationUtils.getAppIconByUid(context, it.uid)
-                        ?: run {
-                            prio--
-                            ApplicationUtils.getAndroidIcon(context)
-                        }
-                    val appName = ApplicationUtils.getAppNameByPackageName(context, packageName)
-                        ?: ApplicationUtils.getAppNameByUid(context, it.uid)
-                        ?: run {
-                            prio--
-                            it.name
-                        }
-                    DisplayProcessInfo(
-                        icon = appIcon,
-                        name = appName,
-                        packageName = packageName,
-                        pid = it.pid,
-                        uid = it.uid,
-                        prio = prio,
-                        rss = it.rss,
-                        cmdline = it.name
-                    )
-                }
-            }.sortedWith(compareByDescending {
-                it.prio
-            })
 
-            val adapter = ProcessListAdapter(context, processList)
-            context.customDialog(
-                title = context.getString(R.string.settings_select_process),
-                adapter = adapter,
-                onItemClick = { position ->
-                    val selectedProcess = processList[position]
-
-                    runCatching {
-                        val success = WuwaDriver.bindProcess(selectedProcess.pid)
-                        if (!success) {
-                            notification.showError(context.getString(R.string.error_bind_process_failed))
-                            return@customDialog
+                // 后台线程处理耗时操作
+                val processList = withContext(Dispatchers.IO) {
+                    WuwaDriver.listProcessesWithInfo()
+                        .filter { process ->
+                            when {
+                                filterSystem && ApplicationUtils.isSystemApp(context, process.uid) -> false
+                                filterLinux && process.uid < 1000 -> false
+                                else -> true
+                            }
                         }
+                        .map { process ->
+                            when {
+                                process.name.isEmpty() || ApplicationUtils.isSystemApp(context, process.uid) -> {
+                                    DisplayProcessInfo(
+                                        icon = ApplicationUtils.getAndroidIcon(context),
+                                        name = process.name,
+                                        packageName = null,
+                                        pid = process.pid,
+                                        uid = process.uid,
+                                        prio = 1,
+                                        rss = process.rss,
+                                        cmdline = process.name
+                                    )
+                                }
+                                else -> {
+                                    val packageName = process.name.split(":").first()
+                                    var prio = 3
 
-                        if (ProcessDeathMonitor.isMonitoring) {
-                            ProcessDeathMonitor.stop()
+                                    val appIcon = ApplicationUtils.getAppIconByPackageName(context, packageName)
+                                        ?: ApplicationUtils.getAppIconByUid(context, process.uid)
+                                        ?: ApplicationUtils.getAndroidIcon(context).also { prio-- }
+
+                                    val appName = ApplicationUtils.getAppNameByPackageName(context, packageName)
+                                        ?: ApplicationUtils.getAppNameByUid(context, process.uid)
+                                        ?: process.name.also { prio-- }
+
+                                    DisplayProcessInfo(
+                                        icon = appIcon,
+                                        name = appName,
+                                        packageName = packageName,
+                                        pid = process.pid,
+                                        uid = process.uid,
+                                        prio = prio,
+                                        rss = process.rss,
+                                        cmdline = process.name
+                                    )
+                                }
+                            }
                         }
-                        ProcessDeathMonitor.start(selectedProcess.pid, processDeathCallback)
-                    }.onFailure {
-                        it.printStackTrace()
-                        notification.showError(context.getString(R.string.error_bind_process_failed_with_reason, it.message ?: ""))
-                    }.onSuccess {
-                        updateCurrentProcessDisplay(selectedProcess)
-                        notification.showSuccess(context.getString(R.string.success_process_selected, selectedProcess.name))
+                        .sortedByDescending { it.prio }
+                }
+
+                // 回到主线程显示对话框
+                val adapter = ProcessListAdapter(context, processList)
+                context.customDialog(
+                    title = context.getString(R.string.settings_select_process),
+                    adapter = adapter,
+                    onItemClick = { position ->
+                        val selectedProcess = processList[position]
+
+                        runCatching {
+                            val success = WuwaDriver.bindProcess(selectedProcess.pid)
+                            if (!success) {
+                                notification.showError(context.getString(R.string.error_bind_process_failed))
+                                return@customDialog
+                            }
+
+                            if (ProcessDeathMonitor.isMonitoring) {
+                                ProcessDeathMonitor.stop()
+                            }
+                            ProcessDeathMonitor.start(selectedProcess.pid, processDeathCallback)
+                        }.onFailure {
+                            it.printStackTrace()
+                            notification.showError(context.getString(R.string.error_bind_process_failed_with_reason, it.message.orEmpty()))
+                        }.onSuccess {
+                            updateCurrentProcessDisplay(selectedProcess)
+                            notification.showSuccess(context.getString(R.string.success_process_selected, selectedProcess.name))
+                        }
                     }
-                }
-            )
-        }.onFailure {
-            Log.e(TAG, it.stackTraceToString())
+                )
+            }.onFailure {
+                Log.e(TAG, it.stackTraceToString())
+                notification.showError("加载进程列表失败: ${it.message}")
+            }
         }
     }
 
@@ -651,5 +660,10 @@ class SettingsController(
     fun requestExitOverlay(): Boolean {
         // 返回 true 表示允许退出
         return true
+    }
+
+    override fun cleanup() {
+        super.cleanup()
+        coroutineScope.cancel()
     }
 }
