@@ -5,10 +5,10 @@ use crate::ext::jni::{JniResult, JniResultExt};
 use crate::wuwa::{WuWaDriver, WuwaMemRegionEntry};
 use anyhow::anyhow;
 use jni::JNIEnv;
-use jni::objects::{JClass, JIntArray, JObject, JObjectArray};
+use jni::objects::{JByteArray, JClass, JIntArray, JObject, JObjectArray};
 use jni::sys::{JNI_FALSE, JNI_TRUE, jboolean, jint, jlong, jsize};
 use jni_macro::jni_method;
-use log::{debug, error, info};
+use log::{debug, error, info, log_enabled, Level};
 use nix::libc::close;
 use nix::sys::mman::{MapFlags, ProtFlags, mmap, munmap};
 use obfstr::obfstr as s;
@@ -376,6 +376,78 @@ pub fn jni_query_mem_regions<'l>(
         debug!("Successfully returned {} memory regions (filtered from {})", filtered_entries.len(), result.entry_count);
 
         Ok(result_array)
+    })()
+    .or_throw(&mut env)
+}
+
+// Memory operations JNI methods
+
+#[jni_method(80, "moe/fuqiuluo/mamu/driver/WuwaDriver", "nativeReadMemory", "(JI)[B")]
+pub fn jni_read_memory<'l>(
+    mut env: JNIEnv<'l>,
+    _obj: JObject,
+    addr: jlong,
+    size: jint,
+) -> JObject<'l> {
+    (|| -> JniResult<JObject<'l>> {
+        if size <= 0 {
+            return Err(anyhow!("Invalid size: {}", size));
+        }
+
+        let manager = DRIVER_MANAGER.read()
+            .map_err(|_| anyhow!("Failed to acquire DriverManager read lock"))?;
+
+        if !manager.is_process_bound() {
+            return Err(anyhow!("No process is bound. Please bind a process first."));
+        }
+
+        let mut buffer = vec![0u8; size as usize];
+        manager.read_memory_unified(addr as u64, &mut buffer, None)
+            .map_err(|e| anyhow!("Failed to read memory at 0x{:x}: {}", addr, e))?;
+
+        let result = env.byte_array_from_slice(&buffer)
+            .map_err(|e| anyhow!("Failed to create byte array: {}", e))?;
+
+        Ok(result.into())
+    })()
+    .or_throw(&mut env)
+}
+
+#[jni_method(80, "moe/fuqiuluo/mamu/driver/WuwaDriver", "nativeWriteMemory", "(J[B)Z")]
+pub fn jni_write_memory(
+    mut env: JNIEnv,
+    _obj: JObject,
+    addr: jlong,
+    data: JByteArray,
+) -> jboolean {
+    (|| -> JniResult<jboolean> {
+        let len = env.get_array_length(&data)
+            .map_err(|e| anyhow!("Failed to get array length: {}", e))? as usize;
+
+        if len == 0 {
+            return Err(anyhow!("Cannot write zero bytes"));
+        }
+
+        let manager = DRIVER_MANAGER.read()
+            .map_err(|_| anyhow!("Failed to acquire DriverManager read lock"))?;
+
+        if !manager.is_process_bound() {
+            return Err(anyhow!("No process is bound. Please bind a process first."));
+        }
+
+        let mut buffer = vec![0i8; len];
+        env.get_byte_array_region(&data, 0, &mut buffer)
+            .map_err(|e| anyhow!("Failed to get byte array region: {}", e))?;
+
+        let bytes: &[u8] = unsafe { std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len) };
+
+        manager.write_memory_unified(addr as u64, bytes)
+            .map_err(|e| anyhow!("Failed to write memory at 0x{:x}: {}", addr, e))?;
+
+        if log_enabled!(Level::Debug) {
+            debug!("{}: 0x{:x}, size={}", s!("写入内存成功"), addr, len);
+        }
+        Ok(JNI_TRUE)
     })()
     .or_throw(&mut env)
 }

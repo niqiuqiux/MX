@@ -168,4 +168,57 @@ impl DriverManager {
             },
         }
     }
+
+    /// 统一的内存写入方法，使用当前配置的 access_mode
+    ///
+    /// # Arguments
+    /// * `addr` - 要写入的虚拟地址
+    /// * `buf` - 写入数据缓冲区
+    ///
+    /// # Returns
+    /// * `Ok(())` 如果写入成功
+    /// * `Err` 如果操作失败
+    pub fn write_memory_unified(
+        &self,
+        addr: u64,
+        buf: &[u8],
+    ) -> anyhow::Result<()> {
+        match self.access_mode {
+            MemoryAccessMode::None => {
+                // 物理内存写入（绕过 access_mode）
+                let driver = self
+                    .get_driver()
+                    .ok_or_else(|| anyhow::anyhow!("Driver not initialized"))?;
+                let pid = self.get_bound_pid();
+                driver.write_physical_memory(
+                    pid,
+                    buf.as_ptr() as usize,
+                    addr as usize,
+                    buf.len(),
+                )?;
+                Ok(())
+            },
+            MemoryAccessMode::PageFault => {
+                // 缺页模式：通过 driver 正常写入
+                let driver = self
+                    .get_driver()
+                    .ok_or_else(|| anyhow::anyhow!("Driver not initialized"))?;
+                let pid = self.get_bound_pid();
+                driver.write_memory(
+                    pid,
+                    buf.as_ptr() as usize,
+                    addr as usize,
+                    buf.len(),
+                )?;
+                Ok(())
+            },
+            MemoryAccessMode::NonCacheable | MemoryAccessMode::WriteThrough | MemoryAccessMode::Normal => {
+                // 使用 bind_proc 和配置的 access_mode
+                let bind_proc = self
+                    .get_bound_process()
+                    .ok_or_else(|| anyhow::anyhow!("Process not bound"))?;
+                bind_proc.write_memory(addr as usize, buf)
+            },
+        }
+    }
 }
