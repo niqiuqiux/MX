@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Material Card 基础样式 -->
-    <style name="FloatingCard" parent="Widget.MaterialComponents.CardView">
+    <style name="FloatingCard" parent="Widget.Material3.CardView.Elevated">
         <item name="cardBackgroundColor">@color/floating_surface</item>
         <item name="cardCornerRadius">@dimen/floating_radius_lg</item>
         <item name="cardElevation">@dimen/floating_elevation_card</item>
