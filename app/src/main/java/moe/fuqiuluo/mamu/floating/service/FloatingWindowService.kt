@@ -96,6 +96,7 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
         setupFullscreenView()
 
         if (!WuwaDriver.loaded) {
+            Toast.makeText(this, "驱动载入异常，请重新启动!", Toast.LENGTH_SHORT).show()
             throw RuntimeException("WuwaDriver is not loaded")
         }
 
