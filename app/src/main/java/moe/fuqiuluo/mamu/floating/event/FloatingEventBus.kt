@@ -9,12 +9,19 @@ import kotlinx.coroutines.flow.asSharedFlow
  * 用于在不同控制器之间广播事件，实现解耦通信
  */
 object FloatingEventBus {
-    // 地址值变更事件流
+    // 地址值变更事件流（单个）
     private val _addressValueChangedEvents = MutableSharedFlow<AddressValueChangedEvent>(
         replay = 0,
         extraBufferCapacity = 16
     )
     val addressValueChangedEvents: SharedFlow<AddressValueChangedEvent> = _addressValueChangedEvents.asSharedFlow()
+
+    // 地址值变更事件流（批量）
+    private val _batchAddressValueChangedEvents = MutableSharedFlow<BatchAddressValueChangedEvent>(
+        replay = 0,
+        extraBufferCapacity = 8
+    )
+    val batchAddressValueChangedEvents: SharedFlow<BatchAddressValueChangedEvent> = _batchAddressValueChangedEvents.asSharedFlow()
 
     // 进程状态变更事件流
     private val _processStateEvents = MutableSharedFlow<ProcessStateEvent>(
@@ -52,10 +59,18 @@ object FloatingEventBus {
     val searchResultsUpdatedEvents: SharedFlow<SearchResultsUpdatedEvent> = _searchResultsUpdatedEvents.asSharedFlow()
 
     /**
-     * 发送地址值变更事件
+     * 发送地址值变更事件（单个）
      */
     suspend fun emitAddressValueChanged(event: AddressValueChangedEvent) {
         _addressValueChangedEvents.emit(event)
+    }
+
+    /**
+     * 发送地址值变更事件（批量）
+     * 用于批量修改操作，避免发送大量单个事件造成性能问题
+     */
+    suspend fun emitBatchAddressValueChanged(event: BatchAddressValueChangedEvent) {
+        _batchAddressValueChangedEvents.emit(event)
     }
 
     /**

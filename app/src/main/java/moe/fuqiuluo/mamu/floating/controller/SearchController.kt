@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
 import moe.fuqiuluo.mamu.R
 import moe.fuqiuluo.mamu.floating.event.AddressValueChangedEvent
+import moe.fuqiuluo.mamu.floating.event.BatchAddressValueChangedEvent
 import moe.fuqiuluo.mamu.floating.event.FloatingEventBus
 import moe.fuqiuluo.mamu.floating.event.ProcessStateEvent
 import moe.fuqiuluo.mamu.floating.event.SaveSearchResultsEvent
@@ -78,11 +79,23 @@ class SearchController(
      * 当保存地址界面修改值时，同步更新搜索结果界面的显示
      */
     private fun subscribeToAddressEvents() {
+        // 订阅单个地址变更事件
         coroutineScope.launch {
             FloatingEventBus.addressValueChangedEvents
                 .filter { it.source != AddressValueChangedEvent.Source.SEARCH }
                 .collect { event ->
                     searchResultAdapter.updateItemValueByAddress(event.address, event.newValue)
+                }
+        }
+
+        // 订阅批量地址变更事件
+        coroutineScope.launch {
+            FloatingEventBus.batchAddressValueChangedEvents
+                .filter { it.source != AddressValueChangedEvent.Source.SEARCH }
+                .collect { event ->
+                    event.changes.forEach { change ->
+                        searchResultAdapter.updateItemValueByAddress(change.address, change.newValue)
+                    }
                 }
         }
     }
@@ -576,6 +589,7 @@ class SearchController(
             var successCount = 0
             var failureCount = 0
             var noBackupCount = 0
+            val successfulChanges = mutableListOf<BatchAddressValueChangedEvent.AddressChange>()
 
             withContext(Dispatchers.IO) {
                 selectedItems.forEach { item ->
@@ -608,16 +622,14 @@ class SearchController(
                                     address,
                                     backup.originalValue
                                 )
-                                // 发送事件通知其他界面同步更新
-                                FloatingEventBus.emitAddressValueChanged(
-                                    AddressValueChangedEvent(
-                                        address = address,
-                                        newValue = backup.originalValue,
-                                        valueType = backup.originalType.nativeId,
-                                        source = AddressValueChangedEvent.Source.SEARCH
-                                    )
-                                )
                             }
+                            successfulChanges.add(
+                                BatchAddressValueChangedEvent.AddressChange(
+                                    address = address,
+                                    newValue = backup.originalValue,
+                                    valueType = backup.originalType.nativeId
+                                )
+                            )
 
                             // 恢复成功后删除备份记录
                             MemoryBackupManager.removeBackup(address)
@@ -629,6 +641,16 @@ class SearchController(
                         failureCount++
                     }
                 }
+            }
+
+            // 发送批量事件通知其他界面同步更新
+            if (successfulChanges.isNotEmpty()) {
+                FloatingEventBus.emitBatchAddressValueChanged(
+                    BatchAddressValueChangedEvent(
+                        changes = successfulChanges,
+                        source = AddressValueChangedEvent.Source.SEARCH
+                    )
+                )
             }
 
             // 显示结果统计
@@ -866,6 +888,7 @@ class SearchController(
             coroutineScope.launch {
                 var successCount = 0
                 var failureCount = 0
+                val successfulChanges = mutableListOf<BatchAddressValueChangedEvent.AddressChange>()
 
                 try {
                     val dataBytes = ValueTypeUtils.parseExprToBytes(newValue, valueType)
@@ -898,16 +921,14 @@ class SearchController(
                                             address,
                                             newValue
                                         )
-                                        // 发送事件通知其他界面同步更新
-                                        FloatingEventBus.emitAddressValueChanged(
-                                            AddressValueChangedEvent(
-                                                address = address,
-                                                newValue = newValue,
-                                                valueType = valueType.nativeId,
-                                                source = AddressValueChangedEvent.Source.SEARCH
-                                            )
-                                        )
                                     }
+                                    successfulChanges.add(
+                                        BatchAddressValueChangedEvent.AddressChange(
+                                            address = address,
+                                            newValue = newValue,
+                                            valueType = valueType.nativeId
+                                        )
+                                    )
                                     successCount++
                                 } else {
                                     failureCount++
@@ -916,6 +937,16 @@ class SearchController(
                                 failureCount++
                             }
                         }
+                    }
+
+                    // 发送批量事件通知其他界面同步更新
+                    if (successfulChanges.isNotEmpty()) {
+                        FloatingEventBus.emitBatchAddressValueChanged(
+                            BatchAddressValueChangedEvent(
+                                changes = successfulChanges,
+                                source = AddressValueChangedEvent.Source.SEARCH
+                            )
+                        )
                     }
 
                     // 显示结果统计

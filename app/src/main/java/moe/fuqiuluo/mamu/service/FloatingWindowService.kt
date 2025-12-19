@@ -26,11 +26,8 @@ import androidx.core.view.isVisible
 import com.tencent.mmkv.MMKV
 import moe.fuqiuluo.mamu.MainActivity
 import moe.fuqiuluo.mamu.R
-import moe.fuqiuluo.mamu.floating.data.model.SavedAddress
 import moe.fuqiuluo.mamu.databinding.FloatingFullscreenLayoutBinding
 import moe.fuqiuluo.mamu.databinding.FloatingWindowLayoutBinding
-import moe.fuqiuluo.mamu.driver.ExactSearchResultItem
-import moe.fuqiuluo.mamu.driver.FuzzySearchResultItem
 import moe.fuqiuluo.mamu.driver.ProcessDeathMonitor
 import moe.fuqiuluo.mamu.driver.WuwaDriver
 import kotlinx.coroutines.CoroutineScope
@@ -51,7 +48,6 @@ import moe.fuqiuluo.mamu.utils.onError
 import moe.fuqiuluo.mamu.utils.onSuccess
 import moe.fuqiuluo.mamu.floating.FloatingWindowStateManager
 import moe.fuqiuluo.mamu.floating.event.FloatingEventBus
-import moe.fuqiuluo.mamu.floating.event.MemoryRangeChangedEvent
 import moe.fuqiuluo.mamu.floating.event.ProcessStateEvent
 import moe.fuqiuluo.mamu.floating.event.UIActionEvent
 import moe.fuqiuluo.mamu.data.settings.selectedMemoryRanges

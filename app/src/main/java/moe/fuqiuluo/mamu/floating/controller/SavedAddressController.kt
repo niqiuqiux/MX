@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
 import moe.fuqiuluo.mamu.R
 import moe.fuqiuluo.mamu.floating.event.AddressValueChangedEvent
+import moe.fuqiuluo.mamu.floating.event.BatchAddressValueChangedEvent
 import moe.fuqiuluo.mamu.floating.event.FloatingEventBus
 import moe.fuqiuluo.mamu.floating.event.ProcessStateEvent
 import moe.fuqiuluo.mamu.floating.event.SaveSearchResultsEvent
@@ -85,11 +86,23 @@ class SavedAddressController(
      * 当搜索结果界面修改值时，同步更新保存地址界面的显示
      */
     private fun subscribeToAddressEvents() {
+        // 订阅单个地址变更事件
         coroutineScope.launch {
             FloatingEventBus.addressValueChangedEvents
                 .filter { it.source != AddressValueChangedEvent.Source.SAVED_ADDRESS }
                 .collect { event ->
                     updateAddressValueByAddress(event.address, event.newValue)
+                }
+        }
+
+        // 订阅批量地址变更事件
+        coroutineScope.launch {
+            FloatingEventBus.batchAddressValueChangedEvents
+                .filter { it.source != AddressValueChangedEvent.Source.SAVED_ADDRESS }
+                .collect { event ->
+                    event.changes.forEach { change ->
+                        updateAddressValueByAddress(change.address, change.newValue)
+                    }
                 }
         }
     }
@@ -511,6 +524,7 @@ class SavedAddressController(
                 // 统计结果并更新 UI
                 var successCount = 0
                 var failureCount = 0
+                val successfulChanges = mutableListOf<BatchAddressValueChangedEvent.AddressChange>()
 
                 results.forEachIndexed { index, success ->
                     if (success) {
@@ -520,19 +534,27 @@ class SavedAddressController(
                             savedAddresses[addrIndex] = item.copy(value = newValue)
                             adapter.updateAddress(savedAddresses[addrIndex])
                         }
-                        // 发送事件通知其他界面同步更新
-                        FloatingEventBus.emitAddressValueChanged(
-                            AddressValueChangedEvent(
+                        successfulChanges.add(
+                            BatchAddressValueChangedEvent.AddressChange(
                                 address = item.address,
                                 newValue = newValue,
-                                valueType = valueType.nativeId,
-                                source = AddressValueChangedEvent.Source.SAVED_ADDRESS
+                                valueType = valueType.nativeId
                             )
                         )
                         successCount++
                     } else {
                         failureCount++
                     }
+                }
+
+                // 发送批量事件通知其他界面同步更新
+                if (successfulChanges.isNotEmpty()) {
+                    FloatingEventBus.emitBatchAddressValueChanged(
+                        BatchAddressValueChangedEvent(
+                            changes = successfulChanges,
+                            source = AddressValueChangedEvent.Source.SAVED_ADDRESS
+                        )
+                    )
                 }
 
                 if (failureCount == 0) {
@@ -599,6 +621,7 @@ class SavedAddressController(
         coroutineScope.launch {
             var restoreCount = 0
             var failCount = 0
+            val successfulChanges = mutableListOf<BatchAddressValueChangedEvent.AddressChange>()
 
             withContext(Dispatchers.IO) {
                 selectedItems.forEach { item ->
@@ -610,17 +633,13 @@ class SavedAddressController(
                                 backup.originalType
                             )
                             if (WuwaDriver.writeMemory(item.address, dataBytes)) {
-                                // 发送事件通知其他界面同步更新
-                                withContext(Dispatchers.Main) {
-                                    FloatingEventBus.emitAddressValueChanged(
-                                        AddressValueChangedEvent(
-                                            address = item.address,
-                                            newValue = backup.originalValue,
-                                            valueType = backup.originalType.nativeId,
-                                            source = AddressValueChangedEvent.Source.SAVED_ADDRESS
-                                        )
+                                successfulChanges.add(
+                                    BatchAddressValueChangedEvent.AddressChange(
+                                        address = item.address,
+                                        newValue = backup.originalValue,
+                                        valueType = backup.originalType.nativeId
                                     )
-                                }
+                                )
                                 MemoryBackupManager.removeBackup(item.address)
                                 restoreCount++
                             } else {
@@ -631,6 +650,16 @@ class SavedAddressController(
                         }
                     }
                 }
+            }
+
+            // 发送批量事件通知其他界面同步更新
+            if (successfulChanges.isNotEmpty()) {
+                FloatingEventBus.emitBatchAddressValueChanged(
+                    BatchAddressValueChangedEvent(
+                        changes = successfulChanges,
+                        source = AddressValueChangedEvent.Source.SAVED_ADDRESS
+                    )
+                )
             }
 
             // 移除地址
@@ -710,6 +739,7 @@ class SavedAddressController(
             var restoreCount = 0
             var noBackupCount = 0
             var failCount = 0
+            val successfulChanges = mutableListOf<BatchAddressValueChangedEvent.AddressChange>()
 
             withContext(Dispatchers.IO) {
                 selectedItems.forEach { item ->
@@ -729,16 +759,14 @@ class SavedAddressController(
                                             item.copy(value = backup.originalValue)
                                         adapter.updateAddress(savedAddresses[index])
                                     }
-                                    // 发送事件通知其他界面同步更新
-                                    FloatingEventBus.emitAddressValueChanged(
-                                        AddressValueChangedEvent(
-                                            address = item.address,
-                                            newValue = backup.originalValue,
-                                            valueType = backup.originalType.nativeId,
-                                            source = AddressValueChangedEvent.Source.SAVED_ADDRESS
-                                        )
-                                    )
                                 }
+                                successfulChanges.add(
+                                    BatchAddressValueChangedEvent.AddressChange(
+                                        address = item.address,
+                                        newValue = backup.originalValue,
+                                        valueType = backup.originalType.nativeId
+                                    )
+                                )
                                 MemoryBackupManager.removeBackup(item.address)
                                 restoreCount++
                             } else {
@@ -751,6 +779,16 @@ class SavedAddressController(
                         noBackupCount++
                     }
                 }
+            }
+
+            // 发送批量事件通知其他界面同步更新
+            if (successfulChanges.isNotEmpty()) {
+                FloatingEventBus.emitBatchAddressValueChanged(
+                    BatchAddressValueChangedEvent(
+                        changes = successfulChanges,
+                        source = AddressValueChangedEvent.Source.SAVED_ADDRESS
+                    )
+                )
             }
 
             when {
