@@ -8,6 +8,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import com.tencent.mmkv.MMKV
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import moe.fuqiuluo.mamu.R
 import moe.fuqiuluo.mamu.databinding.DialogModifyValueBinding
 import moe.fuqiuluo.mamu.driver.ExactSearchResultItem
@@ -16,6 +21,9 @@ import moe.fuqiuluo.mamu.driver.SearchResultItem
 import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
 import moe.fuqiuluo.mamu.data.settings.keyboardType
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
+import moe.fuqiuluo.mamu.floating.event.FloatingEventBus
+import moe.fuqiuluo.mamu.floating.event.NavigateToMemoryAddressEvent
+import moe.fuqiuluo.mamu.floating.event.UIActionEvent
 import moe.fuqiuluo.mamu.widget.BuiltinKeyboard
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
 import moe.fuqiuluo.mamu.widget.simpleSingleChoiceDialog
@@ -32,11 +40,18 @@ class ModifyValueDialog(
     lateinit var value: String
     var address: Long = Long.MIN_VALUE
 
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
     override fun setupDialog() {
         // 使用 dialog.context 确保使用正确的主题
         val binding = DialogModifyValueBinding.inflate(LayoutInflater.from(dialog.context))
         dialog.setContentView(binding.root)
+
+        // 添加对话框关闭监听，清理协程
+        dialog.setOnDismissListener {
+            coroutineScope.cancel()
+        }
 
         // 应用透明度设置
         val mmkv = MMKV.defaultMMKV()
@@ -180,7 +195,19 @@ class ModifyValueDialog(
         }
 
         binding.btnGoto.setOnClickListener {
-            notification.showSuccess("转到功能待实现")
+            // 发送导航事件到内存预览界面，并切换tab
+            coroutineScope.launch {
+                // 发送导航事件
+                FloatingEventBus.emitNavigateToMemoryAddress(
+                    NavigateToMemoryAddressEvent(address = address)
+                )
+                // 切换到内存预览tab
+                FloatingEventBus.emitUIAction(
+                    UIActionEvent.SwitchToMemoryPreviewTab
+                )
+                notification.showSuccess("已转到地址: ${String.format("%X", address)}")
+                dialog.dismiss()
+            }
         }
 
         binding.btnCancel.setOnClickListener {

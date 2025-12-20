@@ -15,7 +15,8 @@ import moe.fuqiuluo.mamu.R
 class MultiChoiceAdapter(
     private val context: Context,
     private val options: Array<String>,
-    private val checkedItems: BooleanArray
+    private val checkedItems: BooleanArray,
+    private val itemColors: IntArray? = null
 ) : BaseAdapter() {
 
     override fun getCount(): Int = options.size
@@ -33,9 +34,10 @@ class MultiChoiceAdapter(
 
         val option = options[position]
 
-        // 设置文本内容和颜色（白色统一风格）
+        // 设置文本内容和颜色
         textView.text = option
-        textView.setTextColor(0xFFFFFFFF.toInt())
+        val color = itemColors?.getOrNull(position) ?: 0xFFFFFFFF.toInt()
+        textView.setTextColor(color)
 
         // 设置 CheckBox 状态（白色已在布局中设置）
         checkBox.isChecked = checkedItems[position]

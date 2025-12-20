@@ -107,8 +107,7 @@
         android:id="@+id/results_recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:fadeScrollbars="false"
-        android:scrollbars="vertical"
+        android:scrollbars="none"
         android:clipToPadding="false"
         android:paddingTop="@dimen/floating_spacing_xs"
         android:paddingBottom="@dimen/floating_spacing_xs"
@@ -116,6 +115,16 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 快速滚动条 -->
+    <moe.fuqiuluo.mamu.widget.FastScrollerView
+        android:id="@+id/search_fast_scroller"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="@id/results_recycler_view"
+        app:layout_constraintBottom_toBottomOf="@id/results_recycler_view"
+        app:layout_constraintStart_toStartOf="@id/results_recycler_view"
+        app:layout_constraintEnd_toEndOf="@id/results_recycler_view" />
 
     <!-- 空状态视图 -->
     <LinearLayout

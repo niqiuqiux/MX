@@ -198,6 +198,21 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
                     is UIActionEvent.HideFloatingWindow -> {
                         hideFullscreen()
                     }
+                    is UIActionEvent.SwitchToSettingsTab -> {
+                        changeCurrentContent(R.id.content_settings, R.id.indicator_settings)
+                    }
+                    is UIActionEvent.SwitchToSearchTab -> {
+                        changeCurrentContent(R.id.content_search, R.id.indicator_search)
+                    }
+                    is UIActionEvent.SwitchToSavedAddressesTab -> {
+                        changeCurrentContent(R.id.content_saved_addresses, R.id.indicator_saved_addresses)
+                    }
+                    is UIActionEvent.SwitchToMemoryPreviewTab -> {
+                        changeCurrentContent(R.id.content_memory_preview, R.id.indicator_memory_preview)
+                    }
+                    is UIActionEvent.SwitchToBreakpointsTab -> {
+                        changeCurrentContent(R.id.content_breakpoints, R.id.indicator_breakpoints)
+                    }
                 }
             }
         }

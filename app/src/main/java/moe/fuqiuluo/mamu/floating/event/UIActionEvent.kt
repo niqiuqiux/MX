@@ -26,4 +26,19 @@ sealed class UIActionEvent {
 
     /** 请求隐藏悬浮窗（搜索时最小化） */
     data object HideFloatingWindow : UIActionEvent()
+
+    /** 请求切换到设置 Tab */
+    data object SwitchToSettingsTab : UIActionEvent()
+
+    /** 请求切换到搜索 Tab */
+    data object SwitchToSearchTab : UIActionEvent()
+
+    /** 请求切换到保存地址 Tab */
+    data object SwitchToSavedAddressesTab : UIActionEvent()
+
+    /** 请求切换到内存预览 Tab */
+    data object SwitchToMemoryPreviewTab : UIActionEvent()
+
+    /** 请求切换到断点 Tab */
+    data object SwitchToBreakpointsTab : UIActionEvent()
 }

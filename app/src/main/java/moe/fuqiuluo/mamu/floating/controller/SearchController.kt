@@ -314,6 +314,9 @@ class SearchController(
                 (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
             }
         }
+
+        // 绑定快速滚动条
+        binding.searchFastScroller.attachToRecyclerView(binding.resultsRecyclerView)
     }
 
     private fun setupRefreshButton() {
@@ -991,6 +994,7 @@ class SearchController(
 
     override fun cleanup() {
         super.cleanup()
+        binding.searchFastScroller.detachFromRecyclerView()
         coroutineScope.cancel()
     }
 }

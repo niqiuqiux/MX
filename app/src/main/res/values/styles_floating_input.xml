@@ -17,6 +17,12 @@
         <item name="android:textSize">@dimen/floating_text_body</item>
     </style>
 
+    <style name="FloatingFixedCheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/selector_checkbox</item>
+        <item name="android:textColor">@color/floating_text_primary</item>
+        <item name="android:textSize">@dimen/floating_text_body</item>
+    </style>
+
     <!-- Material Slider (替代SeekBar) -->
     <style name="FloatingSlider" parent="Widget.Material3.Slider">
         <item name="thumbColor">@color/floating_primary_light</item>

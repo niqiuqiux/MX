@@ -66,10 +66,18 @@ object LocalMemoryOps {
         return nativeGetPid()
     }
 
+    /**
+     * 获取当前一页的大小
+     */
+    fun getPageSize(): Int {
+        return nativeGetPageSize()
+    }
+
     // Native methods
     private external fun nativeAlloc(size: Int): Long
     private external fun nativeFree(address: Long, size: Int)
     private external fun nativeRead(address: Long, size: Int): ByteArray
     private external fun nativeWrite(address: Long, data: ByteArray)
     private external fun nativeGetPid(): Int
+    private external fun nativeGetPageSize(): Int
 }

@@ -14,6 +14,7 @@ class MultiChoiceDialog(
     private val title: String = "",
     private val options: Array<String> = emptyArray(),
     private val checkedItems: BooleanArray = BooleanArray(0),
+    private val itemColors: IntArray? = null,
 ): BaseDialog(context) {
     var onMultiChoice: ((BooleanArray) -> Unit)? = null
 
@@ -25,7 +26,7 @@ class MultiChoiceDialog(
         // 设置标题
         viewBinding.dialogTitle.text = title
 
-        val adapter = MultiChoiceAdapter(context, options, checkedItems)
+        val adapter = MultiChoiceAdapter(context, options, checkedItems, itemColors)
 
         // 设置列表
         val listView = viewBinding.optionList
@@ -51,6 +52,7 @@ fun Context.multiChoiceDialog(
     title: String,
     options: Array<String>,
     checkedItems: BooleanArray,
+    itemColors: IntArray? = null,
     onMultiChoice: (BooleanArray) -> Unit,
     onCancel: (() -> Unit)? = null,
 ) {
@@ -59,6 +61,7 @@ fun Context.multiChoiceDialog(
         title = title,
         options = options,
         checkedItems = checkedItems,
+        itemColors = itemColors,
     )
     dialog.onMultiChoice = onMultiChoice
     dialog.onCancel = onCancel

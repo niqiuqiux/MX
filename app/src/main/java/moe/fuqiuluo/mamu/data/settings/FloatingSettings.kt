@@ -2,6 +2,7 @@ package moe.fuqiuluo.mamu.data.settings
 
 import com.tencent.mmkv.MMKV
 import moe.fuqiuluo.mamu.driver.WuwaDriver
+import moe.fuqiuluo.mamu.floating.data.model.MemoryDisplayFormat
 import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
 
 /**
@@ -32,6 +33,8 @@ private const val KEY_FAILED_PAGE_THRESHOLD = "failed_page_threshold"
 private const val KEY_CHUNK_SIZE = "chunk_size"
 private const val KEY_DIALOG_TRANSPARENCY_ENABLED = "dialog_transparency_enabled"
 private const val KEY_KEYBOARD_STATE = "keyboard_state"
+private const val KEY_MEMORY_REGION_CACHE_INTERVAL = "memory_region_cache_interval_v2"
+private const val KEY_MEMORY_DISPLAY_FORMATS = "memory_display_formats"
 
 private const val DEFAULT_OPACITY = 0.55f
 private const val DEFAULT_MEMORY_BUFFER_SIZE = 512
@@ -52,6 +55,7 @@ private const val DEFAULT_RUDE_SEARCH = true // 默认不启用粗鲁搜索模�
 private const val DEFAULT_FAILED_PAGE_THRESHOLD = 4 // 默认连续失败页阈值
 private const val DEFAULT_DIALOG_TRANSPARENCY_ENABLED = true // 默认启用dialog透明度
 private const val DEFAULT_KEYBOARD_STATE = 1 // 默认展开 (0=折叠, 1=展开, 2=功能)
+private const val DEFAULT_MEMORY_REGION_CACHE_INTERVAL = 3000 // 默认 500ms 缓存间隔
 
 /**
  * 悬浮窗透明度 (0.0 - 1.0)
@@ -298,4 +302,36 @@ var MMKV.keyboardState: Int
     get() = decodeInt(KEY_KEYBOARD_STATE, DEFAULT_KEYBOARD_STATE)
     set(value) {
         encode(KEY_KEYBOARD_STATE, value)
+    }
+
+/**
+ * 内存区域缓存间隔 (毫秒)
+ * 在此间隔内跳转不会重新查询内存区域
+ * 0 = 禁用缓存（每次都查询）
+ */
+var MMKV.memoryRegionCacheInterval: Int
+    get() = decodeInt(KEY_MEMORY_REGION_CACHE_INTERVAL, DEFAULT_MEMORY_REGION_CACHE_INTERVAL)
+    set(value) {
+        encode(KEY_MEMORY_REGION_CACHE_INTERVAL, value)
+    }
+
+/**
+ * 内存预览显示格式列表
+ * 存储格式代码，如 "h,D,Q"
+ */
+var MMKV.memoryDisplayFormats: List<MemoryDisplayFormat>
+    get() {
+        val codesString = decodeString(KEY_MEMORY_DISPLAY_FORMATS, null)
+        if (codesString.isNullOrEmpty()) {
+            return MemoryDisplayFormat.getDefaultFormats()
+        }
+        return codesString.split(",").mapNotNull { code ->
+            MemoryDisplayFormat.fromCode(code.trim())
+        }.ifEmpty {
+            MemoryDisplayFormat.getDefaultFormats()
+        }
+    }
+    set(value) {
+        val codesString = value.joinToString(",") { it.code }
+        encode(KEY_MEMORY_DISPLAY_FORMATS, codesString)
     }

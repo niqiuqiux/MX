@@ -5,6 +5,7 @@ use jni::objects::{JByteArray, JObject};
 use jni::sys::{jint, jlong};
 use jni_macro::jni_method;
 use std::alloc::{Layout, alloc, dealloc};
+use nix::libc;
 
 /// Allocate memory of specified size (like malloc)
 #[jni_method(70, "moe/fuqiuluo/mamu/driver/LocalMemoryOps", "nativeAlloc", "(I)J")]
@@ -70,4 +71,14 @@ pub fn jni_practice_write(mut env: JNIEnv, _obj: JObject, address: jlong, data: 
 #[jni_method(70, "moe/fuqiuluo/mamu/driver/LocalMemoryOps", "nativeGetPid", "()I")]
 pub fn jni_practice_get_pid(_env: JNIEnv, _obj: JObject) -> jint {
     std::process::id() as jint
+}
+
+/// Get Page Size
+#[jni_method(70, "moe/fuqiuluo/mamu/driver/LocalMemoryOps", "nativeGetPageSize", "()I")]
+pub fn jni_practice_get_page_size(_env: JNIEnv, _obj: JObject) -> jint {
+    unsafe {
+        let page_size = libc::sysconf(libc::_SC_PAGESIZE);
+
+        page_size as jint
+    }
 }

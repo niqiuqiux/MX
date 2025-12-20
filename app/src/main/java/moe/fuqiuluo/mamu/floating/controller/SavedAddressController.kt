@@ -337,6 +337,9 @@ class SavedAddressController(
                 (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
             }
         }
+
+        // 绑定快速滚动条
+        binding.savedFastScroller.attachToRecyclerView(binding.savedAddressesRecyclerView)
     }
 
     private fun setupRefreshButton() {
@@ -1156,6 +1159,7 @@ class SavedAddressController(
 
     override fun cleanup() {
         super.cleanup()
+        binding.savedFastScroller.detachFromRecyclerView()
         stopAutoUpdate()
         coroutineScope.cancel()
     }

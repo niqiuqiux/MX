@@ -27,7 +27,7 @@
     <color name="floating_info">#2196F3</color>              <!-- 信息（蓝色） -->
 
     <!-- 功能色系 (Functional) -->
-    <color name="floating_address">#4FBA52</color>           <!-- 地址颜色（绿色） -->
+    <color name="floating_address">#57D05B</color>           <!-- 地址颜色（绿色） -->
     <color name="floating_type">#87CEEB</color>              <!-- 类型颜色（天蓝） -->
     <color name="floating_range">#FF0000</color>             <!-- 范围颜色（红色） -->
     <color name="floating_memory">#FF9800</color>            <!-- 内存颜色（橙色） -->

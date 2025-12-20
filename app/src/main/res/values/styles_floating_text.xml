@@ -46,6 +46,10 @@
         <item name="android:textColor">@color/floating_text_tertiary</item>
     </style>
 
+    <style name="FloatingText.Small.Monospace">
+        <item name="android:fontFamily">monospace</item>
+    </style>
+
     <!-- 等宽字体（用于地址、类型等） -->
     <style name="FloatingText.Monospace">
         <item name="android:fontFamily">monospace</item>
@@ -54,6 +58,7 @@
 
     <style name="FloatingText.Address" parent="FloatingText.Monospace">
         <item name="android:textColor">@color/floating_address</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="FloatingText.Type" parent="FloatingText.Monospace">

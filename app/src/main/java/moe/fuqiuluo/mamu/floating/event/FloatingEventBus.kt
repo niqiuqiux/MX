@@ -58,6 +58,13 @@ object FloatingEventBus {
     )
     val searchResultsUpdatedEvents: SharedFlow<SearchResultsUpdatedEvent> = _searchResultsUpdatedEvents.asSharedFlow()
 
+    // 导航到内存地址事件流
+    private val _navigateToMemoryAddressEvents = MutableSharedFlow<NavigateToMemoryAddressEvent>(
+        replay = 0,
+        extraBufferCapacity = 4
+    )
+    val navigateToMemoryAddressEvents: SharedFlow<NavigateToMemoryAddressEvent> = _navigateToMemoryAddressEvents.asSharedFlow()
+
     /**
      * 发送地址值变更事件（单个）
      */
@@ -106,5 +113,12 @@ object FloatingEventBus {
      */
     suspend fun emitSearchResultsUpdated(event: SearchResultsUpdatedEvent) {
         _searchResultsUpdatedEvents.emit(event)
+    }
+
+    /**
+     * 发送导航到内存地址事件
+     */
+    suspend fun emitNavigateToMemoryAddress(event: NavigateToMemoryAddressEvent) {
+        _navigateToMemoryAddressEvents.emit(event)
     }
 }
