@@ -40,6 +40,11 @@ class FastScrollerView @JvmOverloads constructor(
     private var isVisible = false
     private var alpha = 0f
 
+    // 性能优化：节流滚动更新
+    private var lastScrollY = -1f
+    private var lastTargetPosition = -1
+    private var scrollUpdateRunnable: Runnable? = null
+
     // 绘制相关
     private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val trackRect = RectF() // 仅用于触摸区域判断，不绘制
@@ -169,20 +174,26 @@ class FastScrollerView @JvmOverloads constructor(
                 if (isPointInsideScrollbar(event.x, event.y)) {
                     isDragging = true
                     show()
-                    scrollToPosition(event.y)
+                    scrollToPositionImmediate(event.y)
                     parent.requestDisallowInterceptTouchEvent(true)
                     return true
                 }
             }
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
-                    scrollToPosition(event.y)
+                    // 性能优化：使用节流，避免频繁滚动
+                    scheduleScrollUpdate(event.y)
                     return true
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
+                    // 取消待处理的滚动更新
+                    scrollUpdateRunnable?.let { removeCallbacks(it) }
+                    scrollUpdateRunnable = null
+                    lastScrollY = -1f
+                    lastTargetPosition = -1
                     parent.requestDisallowInterceptTouchEvent(false)
                     hide()
                     return true
@@ -206,9 +217,73 @@ class FastScrollerView @JvmOverloads constructor(
     }
 
     /**
-     * 根据触摸位置滚动到对应位置
+     * 调度滚动更新（节流）
+     * 使用 postOnAnimation 确保在下一帧更新，避免频繁滚动
      */
-    private fun scrollToPosition(y: Float) {
+    private fun scheduleScrollUpdate(y: Float) {
+        // 如果位置没变化，跳过
+        if (y == lastScrollY) return
+        lastScrollY = y
+
+        // 取消之前的更新
+        scrollUpdateRunnable?.let { removeCallbacks(it) }
+
+        // 立即更新滑块视觉位置（不触发滚动）
+        updateThumbVisualPosition(y)
+
+        // 调度实际的滚动更新
+        scrollUpdateRunnable = Runnable {
+            scrollToPositionInternal(y)
+        }
+        postOnAnimation(scrollUpdateRunnable)
+    }
+
+    /**
+     * 立即滚动到位置（ACTION_DOWN 使用）
+     */
+    private fun scrollToPositionImmediate(y: Float) {
+        lastScrollY = y
+        scrollToPositionInternal(y)
+    }
+
+    /**
+     * 更新滑块的视觉位置（不触发 RecyclerView 滚动）
+     * 用于快速响应触摸，提供流畅的视觉反馈
+     */
+    private fun updateThumbVisualPosition(y: Float) {
+        val trackTop = paddingTop.toFloat()
+        val trackBottom = height - paddingBottom.toFloat()
+        val trackHeight = trackBottom - trackTop
+
+        // 计算滚动进度
+        val scrollProgress = ((y - trackTop) / trackHeight).coerceIn(0f, 1f)
+
+        // 计算滑块位置
+        val rv = recyclerView ?: return
+        val layoutManager = rv.layoutManager as? LinearLayoutManager ?: return
+        val itemCount = layoutManager.itemCount
+        if (itemCount == 0) return
+
+        val visibleItemCount = layoutManager.findLastVisibleItemPosition() -
+                               layoutManager.findFirstVisibleItemPosition() + 1
+        val thumbHeightRatio = min(1f, visibleItemCount.toFloat() / itemCount)
+        val thumbHeight = max(THUMB_MIN_HEIGHT, trackHeight * thumbHeightRatio)
+
+        val thumbTop = trackTop + (trackHeight - thumbHeight) * scrollProgress
+        val thumbBottom = thumbTop + thumbHeight
+
+        val trackLeft = width - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN - paddingEnd
+        val thumbLeft = trackLeft + (SCROLLBAR_WIDTH - THUMB_WIDTH) / 2
+        val thumbRight = thumbLeft + THUMB_WIDTH
+
+        thumbRect.set(thumbLeft, thumbTop, thumbRight, thumbBottom)
+        invalidate()
+    }
+
+    /**
+     * 内部滚动方法（实际触发 RecyclerView 滚动）
+     */
+    private fun scrollToPositionInternal(y: Float) {
         val rv = recyclerView ?: return
         val layoutManager = rv.layoutManager as? LinearLayoutManager ?: return
 
@@ -223,10 +298,12 @@ class FastScrollerView @JvmOverloads constructor(
         val itemCount = layoutManager.itemCount
         val targetPosition = (scrollProgress * itemCount).toInt().coerceIn(0, itemCount - 1)
 
-        // 滚动到目标位置
-        layoutManager.scrollToPositionWithOffset(targetPosition, 0)
+        // 如果目标位置没变，跳过滚动
+        if (targetPosition == lastTargetPosition) return
+        lastTargetPosition = targetPosition
 
-        updateThumbPosition()
+        // 滚动到目标位置（不会触发 onScrolled，所以不需要额外的 updateThumbPosition）
+        layoutManager.scrollToPositionWithOffset(targetPosition, 0)
     }
 
     /**
@@ -278,6 +355,8 @@ class FastScrollerView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         removeCallbacks(hideRunnable)
+        scrollUpdateRunnable?.let { removeCallbacks(it) }
+        scrollUpdateRunnable = null
         detachFromRecyclerView()
     }
 }
