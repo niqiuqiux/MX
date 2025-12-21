@@ -8,7 +8,7 @@
     android:elevation="@dimen/floating_elevation_dialog"
     android:orientation="vertical"
     app:maxHeightPercent="0.8"
-    app:maxWidth="480dp">
+    app:maxWidthPercent="0.8">
 
     <!-- 标题栏 -->
     <LinearLayout
@@ -39,7 +39,7 @@
     <!-- 进程列表 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/process_list"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
@@ -48,6 +48,7 @@
         android:paddingBottom="@dimen/floating_spacing_sm"
         android:scrollbarStyle="outsideOverlay"
         android:scrollbars="vertical"
+        android:minWidth="@dimen/floating_min_process_dialog_width"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
     <!-- 分隔线 -->
@@ -70,7 +71,7 @@
             style="@style/FloatingButton.Text.White"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minWidth="80dp"
+            android:minWidth="@dimen/floating_min_button_width"
             android:text="@string/button_cancel" />
 
     </LinearLayout>

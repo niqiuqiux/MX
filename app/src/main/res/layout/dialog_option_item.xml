@@ -5,6 +5,6 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_settings_item_ripple"
     android:gravity="center_vertical"
-    android:padding="16dp"
+    android:padding="@dimen/floating_spacing_lg"
     android:textColor="#FFFFFF"
-    android:textSize="15sp" />
+    android:textSize="@dimen/floating_text_h3" />

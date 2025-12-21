@@ -16,8 +16,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:paddingBottom="12dp"
+        android:padding="@dimen/floating_spacing_lg"
+        android:paddingBottom="@dimen/floating_spacing_md"
         android:visibility="gone">
 
         <TextView
@@ -27,7 +27,7 @@
             android:layout_weight="1"
             android:text="标题"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="@dimen/floating_text_h2"
             android:textStyle="bold" />
 
     </LinearLayout>
@@ -61,7 +61,7 @@
         android:layout_height="wrap_content"
         android:gravity="end"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="@dimen/floating_spacing_sm">
 
         <Button
             android:id="@+id/btn_cancel"
@@ -70,8 +70,8 @@
             android:layout_height="wrap_content"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:minWidth="64dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
+            android:paddingHorizontal="@dimen/floating_spacing_lg"
+            android:paddingVertical="@dimen/floating_spacing_sm"
             android:text="取消"
             android:textColor="#CCCCCC" />
 

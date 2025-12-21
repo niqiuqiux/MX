@@ -1,7 +1,6 @@
 package moe.fuqiuluo.mamu.ui.screen
 
 import android.content.Intent
-import android.content.res.Configuration
 import moe.fuqiuluo.mamu.DriverInstallActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,12 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +49,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,11 +69,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import moe.fuqiuluo.mamu.MainActivity
+import moe.fuqiuluo.mamu.ui.theme.AdaptiveLayoutInfo
+import moe.fuqiuluo.mamu.ui.theme.Dimens
 import moe.fuqiuluo.mamu.ui.theme.MXTheme
+import moe.fuqiuluo.mamu.ui.theme.rememberAdaptiveLayoutInfo
 import moe.fuqiuluo.mamu.utils.RootConfigManager
 import moe.fuqiuluo.mamu.ui.viewmodel.PermissionSetupState
 import moe.fuqiuluo.mamu.ui.viewmodel.PermissionSetupViewModel
-
 
 private enum class SetupStep(
     val title: String,
@@ -117,11 +123,13 @@ private data class StepState(
 
 @Composable
 fun PermissionSetupScreen(
+    windowSizeClass: WindowSizeClass,
     viewModel: PermissionSetupViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val navigateToDriverInstall by viewModel.navigateToDriverInstallEvent.collectAsState()
+    val adaptiveLayout = rememberAdaptiveLayoutInfo(windowSizeClass)
 
     // 当状态为Completed时，跳转到主界面
     LaunchedEffect(state) {
@@ -152,40 +160,120 @@ fun PermissionSetupScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp)
-        ) {
-            // 标题
-            Text(
-                text = "权限设置",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = "请按照步骤完成应用初始化",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
+        when (adaptiveLayout.windowSizeClass.widthSizeClass) {
+            WindowWidthSizeClass.Compact -> {
+                // 竖屏布局：垂直滚动
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = adaptiveLayout.contentMaxWidth)
+                            .fillMaxWidth()
+                            .padding(paddingValues)
+                            .padding(Dimens.paddingLg(adaptiveLayout))
+                    ) {
+                        // 标题
+                        Text(
+                            text = "权限设置",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = Dimens.spacingSm(adaptiveLayout))
+                        )
+                        Text(
+                            text = "请按照步骤完成应用初始化",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(
+                                bottom = Dimens.spacingXxl(adaptiveLayout)
+                            )
+                        )
 
-            // Stepper 时间线
-            VerticalStepper(
-                steps = stepStates,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+                        // Stepper 时间线
+                        VerticalStepper(
+                            adaptiveLayout = adaptiveLayout,
+                            steps = stepStates,
+                            modifier = Modifier.padding(
+                                bottom = Dimens.paddingLg(adaptiveLayout)
+                            )
+                        )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(
+                                vertical = Dimens.paddingLg(adaptiveLayout)
+                            )
+                        )
 
-            // 当前步骤的详细内容
-            StepContent(
-                state = state,
-                viewModel = viewModel
-            )
+                        // 当前步骤的详细内容
+                        StepContent(
+                            adaptiveLayout = adaptiveLayout,
+                            state = state,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            }
+            else -> {
+                // 横屏布局：2窗格（stepper左侧 + content右侧）
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    // 左窗格：Stepper（30%宽度，独立滚动）
+                    Column(
+                        modifier = Modifier
+                            .weight(0.3f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                            .padding(Dimens.paddingLg(adaptiveLayout))
+                    ) {
+                        Text(
+                            text = "权限设置",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = Dimens.spacingSm(adaptiveLayout))
+                        )
+                        Text(
+                            text = "请按照步骤完成应用初始化",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(
+                                bottom = Dimens.spacingXxl(adaptiveLayout)
+                            )
+                        )
+
+                        VerticalStepper(
+                            adaptiveLayout = adaptiveLayout,
+                            steps = stepStates,
+                            modifier = Modifier.padding(
+                                bottom = Dimens.paddingLg(adaptiveLayout)
+                            )
+                        )
+                    }
+
+                    // 分隔线
+                    VerticalDivider()
+
+                    // 右窗格：Content（70%宽度，独立滚动）
+                    Column(
+                        modifier = Modifier
+                            .weight(0.7f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                            .padding(Dimens.paddingLg(adaptiveLayout))
+                    ) {
+                        StepContent(
+                            adaptiveLayout = adaptiveLayout,
+                            state = state,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -277,12 +365,14 @@ private fun calculateStepStates(state: PermissionSetupState): List<StepState> {
 
 @Composable
 private fun VerticalStepper(
+    adaptiveLayout: AdaptiveLayoutInfo,
     steps: List<StepState>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         steps.forEachIndexed { index, stepState ->
             StepItem(
+                adaptiveLayout = adaptiveLayout,
                 stepState = stepState,
                 showConnector = index < steps.size - 1
             )
@@ -292,6 +382,7 @@ private fun VerticalStepper(
 
 @Composable
 private fun StepItem(
+    adaptiveLayout: AdaptiveLayoutInfo,
     stepState: StepState,
     showConnector: Boolean,
     modifier: Modifier = Modifier
@@ -331,13 +422,13 @@ private fun StepItem(
         // Icon column with connector
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(48.dp)
+            modifier = Modifier.width(Dimens.componentMd(adaptiveLayout))
         ) {
             // Step icon
             Surface(
                 shape = CircleShape,
                 color = containerColor,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(Dimens.componentMd(adaptiveLayout))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -349,30 +440,33 @@ private fun StepItem(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Completed",
                                 tint = iconColor,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(Dimens.iconMd(adaptiveLayout))
                             )
                         }
+
                         StepStatus.ACTIVE -> {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
+                                strokeWidth = Dimens.strokeMd(adaptiveLayout),
                                 color = iconColor
                             )
                         }
+
                         StepStatus.ERROR -> {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Error",
                                 tint = iconColor,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(Dimens.iconMd(adaptiveLayout))
                             )
                         }
+
                         StepStatus.PENDING -> {
                             Icon(
                                 imageVector = stepState.step.icon,
                                 contentDescription = stepState.step.title,
                                 tint = iconColor,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(Dimens.iconMd(adaptiveLayout))
                             )
                         }
                     }
@@ -383,8 +477,8 @@ private fun StepItem(
             if (showConnector) {
                 Box(
                     modifier = Modifier
-                        .width(2.dp)
-                        .height(40.dp)
+                        .width(Dimens.spacingXxs(adaptiveLayout))
+                        .height(Dimens.componentSm(adaptiveLayout))
                         .background(
                             if (stepState.status == StepStatus.COMPLETED) {
                                 MaterialTheme.colorScheme.primary
@@ -396,7 +490,7 @@ private fun StepItem(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
 
         // Step info
         Column(
@@ -409,7 +503,7 @@ private fun StepItem(
                 fontWeight = if (stepState.status == StepStatus.ACTIVE) FontWeight.Bold else FontWeight.Medium,
                 color = textColor
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
             Text(
                 text = stepState.step.description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -421,7 +515,7 @@ private fun StepItem(
                 var showCustomCommand by remember { mutableStateOf(false) }
                 var customCommand by remember { mutableStateOf(RootConfigManager.getCustomRootCommand()) }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
 
                 // 可点击的行，带图标和文字
                 Surface(
@@ -431,16 +525,16 @@ private fun StepItem(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.paddingMd(adaptiveLayout), vertical = Dimens.paddingSm(adaptiveLayout)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(Dimens.iconXs(adaptiveLayout)),
                             tint = MaterialTheme.colorScheme.error
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Dimens.spacingSm(adaptiveLayout)))
                         Text(
                             text = "自定义检查命令",
                             style = MaterialTheme.typography.labelMedium,
@@ -450,7 +544,7 @@ private fun StepItem(
                         Icon(
                             imageVector = if (showCustomCommand) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                             contentDescription = if (showCustomCommand) "收起" else "展开",
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(Dimens.iconSm(adaptiveLayout)),
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -463,7 +557,7 @@ private fun StepItem(
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     Column(
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = Dimens.paddingSm(adaptiveLayout))
                     ) {
                         OutlinedTextField(
                             value = customCommand,
@@ -476,7 +570,7 @@ private fun StepItem(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                         Text(
                             text = "默认: ${RootConfigManager.DEFAULT_ROOT_COMMAND}",
                             style = MaterialTheme.typography.bodySmall,
@@ -487,7 +581,7 @@ private fun StepItem(
             }
 
             if (showConnector) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
             }
         }
     }
@@ -495,6 +589,7 @@ private fun StepItem(
 
 @Composable
 private fun StepContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     state: PermissionSetupState,
     viewModel: PermissionSetupViewModel
 ) {
@@ -505,50 +600,65 @@ private fun StepContent(
     ) {
         when (state) {
             is PermissionSetupState.Initializing -> {
-                InitializingContent()
+                InitializingContent(adaptiveLayout)
             }
+
             is PermissionSetupState.CheckingRoot -> {
-                CheckingRootContent()
+                CheckingRootContent(adaptiveLayout)
             }
+
             is PermissionSetupState.NoRoot -> {
-                NoRootContent(onRetry = { viewModel.retryRootCheck() })
+                NoRootContent(adaptiveLayout, onRetry = { viewModel.retryRootCheck() })
             }
+
             is PermissionSetupState.WaitingUserConfirm -> {
                 WaitingConfirmContent(
+                    adaptiveLayout = adaptiveLayout,
                     onConfirm = { viewModel.confirmUseRoot() }
                 )
             }
+
             is PermissionSetupState.GrantingPermissions -> {
                 GrantingPermissionsContent(
+                    adaptiveLayout = adaptiveLayout,
                     current = state.current,
                     total = state.total,
                     currentPermission = state.currentPermission
                 )
             }
+
             is PermissionSetupState.ApplyingAntiKillProtection -> {
                 ApplyingAntiKillProtectionContent(
+                    adaptiveLayout = adaptiveLayout,
                     current = state.current,
                     total = state.total,
                     currentMeasure = state.currentMeasure
                 )
             }
+
             is PermissionSetupState.CheckingDriver -> {
-                CheckingDriverContent()
+                CheckingDriverContent(adaptiveLayout)
             }
+
             is PermissionSetupState.DriverNotInstalled -> {
                 DriverNotInstalledContent(
+                    adaptiveLayout = adaptiveLayout,
                     onInstall = { viewModel.navigateToDriverInstall() }
                 )
             }
+
             is PermissionSetupState.Completed -> {
                 CompletedContent(
+                    adaptiveLayout = adaptiveLayout,
                     allGranted = state.allGranted,
                     grantedCount = state.grantedCount,
                     totalCount = state.totalCount
                 )
             }
+
             is PermissionSetupState.Error -> {
                 ErrorContent(
+                    adaptiveLayout = adaptiveLayout,
                     message = state.message,
                     onRetry = { viewModel.retryRootCheck() }
                 )
@@ -558,7 +668,7 @@ private fun StepContent(
 }
 
 @Composable
-private fun InitializingContent() {
+private fun InitializingContent(adaptiveLayout: AdaptiveLayoutInfo) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -566,14 +676,14 @@ private fun InitializingContent() {
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Dimens.paddingLg(adaptiveLayout)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 3.dp
+                modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
+                strokeWidth = Dimens.strokeMd(adaptiveLayout)
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
             Text(
                 text = "正在初始化...",
                 style = MaterialTheme.typography.bodyLarge
@@ -583,7 +693,7 @@ private fun InitializingContent() {
 }
 
 @Composable
-private fun CheckingRootContent() {
+private fun CheckingRootContent(adaptiveLayout: AdaptiveLayoutInfo) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -591,23 +701,23 @@ private fun CheckingRootContent() {
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 3.dp
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
+                    strokeWidth = Dimens.strokeMd(adaptiveLayout)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column {
                     Text(
                         text = "正在检查Root权限",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "请在弹出的授权窗口中允许Root访问",
                         style = MaterialTheme.typography.bodyMedium,
@@ -620,7 +730,7 @@ private fun CheckingRootContent() {
 }
 
 @Composable
-private fun NoRootContent(onRetry: () -> Unit) {
+private fun NoRootContent(adaptiveLayout: AdaptiveLayoutInfo, onRetry: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -628,7 +738,7 @@ private fun NoRootContent(onRetry: () -> Unit) {
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.Top
@@ -636,10 +746,10 @@ private fun NoRootContent(onRetry: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "Warning",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
                     tint = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "未获取Root权限",
@@ -647,13 +757,13 @@ private fun NoRootContent(onRetry: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
                     Text(
                         text = "此应用需要Root权限才能正常运行。请确保您的设备已Root，并在授权管理器中允许访问。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "可以在上方的步骤中自定义Root检查命令后重试。",
                         style = MaterialTheme.typography.bodySmall,
@@ -661,7 +771,7 @@ private fun NoRootContent(onRetry: () -> Unit) {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
             Button(
                 onClick = onRetry,
                 modifier = Modifier.align(Alignment.End)
@@ -674,6 +784,7 @@ private fun NoRootContent(onRetry: () -> Unit) {
 
 @Composable
 private fun WaitingConfirmContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     onConfirm: () -> Unit
 ) {
     Card(
@@ -683,7 +794,7 @@ private fun WaitingConfirmContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.Top
@@ -691,22 +802,22 @@ private fun WaitingConfirmContent(
                 Icon(
                     imageVector = Icons.Default.VerifiedUser,
                     contentDescription = "Success",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
                     tint = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Root权限已获取",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
                     Text(
                         text = "将使用Root权限自动授予应用所需的系统权限",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "包括：悬浮窗权限、外部存储访问权限等",
                         style = MaterialTheme.typography.bodySmall,
@@ -714,7 +825,7 @@ private fun WaitingConfirmContent(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
             Button(
                 onClick = onConfirm,
                 modifier = Modifier.align(Alignment.End)
@@ -727,6 +838,7 @@ private fun WaitingConfirmContent(
 
 @Composable
 private fun GrantingPermissionsContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     current: Int,
     total: Int,
     currentPermission: String
@@ -738,7 +850,7 @@ private fun GrantingPermissionsContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -746,8 +858,8 @@ private fun GrantingPermissionsContent(
                 Box {
                     CircularProgressIndicator(
                         progress = { current.toFloat() / total.toFloat() },
-                        modifier = Modifier.size(48.dp),
-                        strokeWidth = 4.dp
+                        modifier = Modifier.size(Dimens.componentMd(adaptiveLayout)),
+                        strokeWidth = Dimens.strokeLg(adaptiveLayout)
                     )
                     Text(
                         text = "$current",
@@ -756,14 +868,14 @@ private fun GrantingPermissionsContent(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "正在授予权限",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "$current / $total",
                         style = MaterialTheme.typography.bodyMedium,
@@ -772,21 +884,21 @@ private fun GrantingPermissionsContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
 
             LinearProgressIndicator(
                 progress = { current.toFloat() / total.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingMd(adaptiveLayout)))
 
             Text(
                 text = "当前权限",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
             Text(
                 text = currentPermission,
                 style = MaterialTheme.typography.bodySmall,
@@ -798,6 +910,7 @@ private fun GrantingPermissionsContent(
 
 @Composable
 private fun ApplyingAntiKillProtectionContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     current: Int,
     total: Int,
     currentMeasure: String
@@ -809,7 +922,7 @@ private fun ApplyingAntiKillProtectionContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -817,8 +930,8 @@ private fun ApplyingAntiKillProtectionContent(
                 Box {
                     CircularProgressIndicator(
                         progress = { current.toFloat() / total.toFloat() },
-                        modifier = Modifier.size(48.dp),
-                        strokeWidth = 4.dp,
+                        modifier = Modifier.size(Dimens.componentMd(adaptiveLayout)),
+                        strokeWidth = Dimens.strokeLg(adaptiveLayout),
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     Text(
@@ -828,14 +941,14 @@ private fun ApplyingAntiKillProtectionContent(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "应用究极免杀保护",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "$current / $total",
                         style = MaterialTheme.typography.bodyMedium,
@@ -844,7 +957,7 @@ private fun ApplyingAntiKillProtectionContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
 
             LinearProgressIndicator(
                 progress = { current.toFloat() / total.toFloat() },
@@ -852,14 +965,14 @@ private fun ApplyingAntiKillProtectionContent(
                 color = MaterialTheme.colorScheme.tertiary
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingMd(adaptiveLayout)))
 
             Text(
                 text = "当前保护措施",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
             Text(
                 text = currentMeasure,
                 style = MaterialTheme.typography.bodySmall,
@@ -870,7 +983,7 @@ private fun ApplyingAntiKillProtectionContent(
 }
 
 @Composable
-private fun CheckingDriverContent() {
+private fun CheckingDriverContent(adaptiveLayout: AdaptiveLayoutInfo) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -878,23 +991,23 @@ private fun CheckingDriverContent() {
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 3.dp
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
+                    strokeWidth = Dimens.strokeMd(adaptiveLayout)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column {
                     Text(
                         text = "正在检查驱动",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Text(
                         text = "正在验证内存驱动是否已安装...",
                         style = MaterialTheme.typography.bodyMedium,
@@ -907,7 +1020,7 @@ private fun CheckingDriverContent() {
 }
 
 @Composable
-private fun DriverNotInstalledContent(onInstall: () -> Unit) {
+private fun DriverNotInstalledContent(adaptiveLayout: AdaptiveLayoutInfo, onInstall: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -915,7 +1028,7 @@ private fun DriverNotInstalledContent(onInstall: () -> Unit) {
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.Top
@@ -923,10 +1036,10 @@ private fun DriverNotInstalledContent(onInstall: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "Warning",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
                     tint = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "驱动未安装",
@@ -934,7 +1047,7 @@ private fun DriverNotInstalledContent(onInstall: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
                     Text(
                         text = "内存驱动尚未安装，需要安装驱动才能使用完整功能。",
                         style = MaterialTheme.typography.bodyMedium,
@@ -942,7 +1055,7 @@ private fun DriverNotInstalledContent(onInstall: () -> Unit) {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
             Button(
                 onClick = onInstall,
                 modifier = Modifier.align(Alignment.End)
@@ -955,6 +1068,7 @@ private fun DriverNotInstalledContent(onInstall: () -> Unit) {
 
 @Composable
 private fun CompletedContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     allGranted: Boolean,
     grantedCount: Int,
     totalCount: Int
@@ -970,7 +1084,7 @@ private fun CompletedContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.Top
@@ -978,34 +1092,34 @@ private fun CompletedContent(
                 Icon(
                     imageVector = if (allGranted) Icons.Default.TaskAlt else Icons.Default.Warning,
                     contentDescription = if (allGranted) "Success" else "Warning",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
                     tint = if (allGranted) {
                         MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.tertiary
                     }
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (allGranted) "权限授予完成" else "部分权限授予成功",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
                     Text(
                         text = "已授予 $grantedCount / $totalCount 项权限",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
+                            modifier = Modifier.size(Dimens.iconXs(adaptiveLayout)),
+                            strokeWidth = Dimens.spacingXxs(adaptiveLayout)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Dimens.spacingSm(adaptiveLayout)))
                         Text(
                             text = "正在启动主界面...",
                             style = MaterialTheme.typography.bodySmall,
@@ -1020,6 +1134,7 @@ private fun CompletedContent(
 
 @Composable
 private fun ErrorContent(
+    adaptiveLayout: AdaptiveLayoutInfo,
     message: String,
     onRetry: () -> Unit
 ) {
@@ -1030,7 +1145,7 @@ private fun ErrorContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(Dimens.paddingXl(adaptiveLayout))
         ) {
             Row(
                 verticalAlignment = Alignment.Top
@@ -1038,10 +1153,10 @@ private fun ErrorContent(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Error",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.iconMd(adaptiveLayout)),
                     tint = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(Dimens.spacingLg(adaptiveLayout)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "发生错误",
@@ -1049,7 +1164,7 @@ private fun ErrorContent(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
@@ -1057,268 +1172,12 @@ private fun ErrorContent(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
             Button(
                 onClick = onRetry,
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Text("重试")
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Light Mode",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun PreviewCheckingRoot() {
-    MXTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
-                Text(
-                    text = "权限设置",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "请按照步骤完成应用初始化",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                VerticalStepper(
-                    steps = listOf(
-                        StepState(SetupStep.CHECK_ROOT, StepStatus.ACTIVE),
-                        StepState(SetupStep.CONFIRM_ROOT, StepStatus.PENDING),
-                        StepState(SetupStep.GRANT_PERMISSIONS, StepStatus.PENDING),
-                        StepState(SetupStep.COMPLETED, StepStatus.PENDING)
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-                CheckingRootContent()
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Light Mode - Confirming",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode - Confirming",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun PreviewConfirming() {
-    MXTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
-                Text(
-                    text = "权限设置",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "请按照步骤完成应用初始化",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                VerticalStepper(
-                    steps = listOf(
-                        StepState(SetupStep.CHECK_ROOT, StepStatus.COMPLETED),
-                        StepState(SetupStep.CONFIRM_ROOT, StepStatus.ACTIVE),
-                        StepState(SetupStep.GRANT_PERMISSIONS, StepStatus.PENDING),
-                        StepState(SetupStep.COMPLETED, StepStatus.PENDING)
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-                WaitingConfirmContent(
-                    onConfirm = {}
-                )
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Light Mode - Granting",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode - Granting",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun PreviewGranting() {
-    MXTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
-                Text(
-                    text = "权限设置",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "请按照步骤完成应用初始化",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                VerticalStepper(
-                    steps = listOf(
-                        StepState(SetupStep.CHECK_ROOT, StepStatus.COMPLETED),
-                        StepState(SetupStep.CONFIRM_ROOT, StepStatus.COMPLETED),
-                        StepState(SetupStep.GRANT_PERMISSIONS, StepStatus.ACTIVE),
-                        StepState(SetupStep.COMPLETED, StepStatus.PENDING)
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-                GrantingPermissionsContent(
-                    current = 3,
-                    total = 5,
-                    currentPermission = "android.permission.QUERY_ALL_PACKAGES"
-                )
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Light Mode - Error",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode - Error",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun PreviewError() {
-    MXTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
-                Text(
-                    text = "权限设置",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "请按照步骤完成应用初始化",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                VerticalStepper(
-                    steps = listOf(
-                        StepState(SetupStep.CHECK_ROOT, StepStatus.ERROR),
-                        StepState(SetupStep.CONFIRM_ROOT, StepStatus.PENDING),
-                        StepState(SetupStep.GRANT_PERMISSIONS, StepStatus.PENDING),
-                        StepState(SetupStep.COMPLETED, StepStatus.PENDING)
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-                NoRootContent(onRetry = {})
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Light Mode - Completed",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode - Completed",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun PreviewCompleted() {
-    MXTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
-                Text(
-                    text = "权限设置",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "请按照步骤完成应用初始化",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                VerticalStepper(
-                    steps = listOf(
-                        StepState(SetupStep.CHECK_ROOT, StepStatus.COMPLETED),
-                        StepState(SetupStep.CONFIRM_ROOT, StepStatus.COMPLETED),
-                        StepState(SetupStep.GRANT_PERMISSIONS, StepStatus.COMPLETED),
-                        StepState(SetupStep.CHECK_DRIVER, StepStatus.COMPLETED),
-                        StepState(SetupStep.COMPLETED, StepStatus.COMPLETED),
-                    ),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-                CompletedContent(
-                    allGranted = true,
-                    grantedCount = 5,
-                    totalCount = 5
-                )
             }
         }
     }

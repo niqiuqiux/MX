@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/dialog_background"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="@dimen/floating_spacing_lg"
     app:maxHeightPercent="0.9"
     app:maxWidthPercent="0.9">
 
@@ -13,10 +13,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingBottom="12dp"
+        android:paddingBottom="@dimen/floating_spacing_md"
         android:text="测试内置键盘"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="@dimen/floating_text_h2"
         android:textStyle="bold" />
 
     <EditText
@@ -27,10 +27,10 @@
         android:cursorVisible="true"
         android:focusable="false"
         android:hint="输入内容..."
-        android:padding="12dp"
+        android:padding="@dimen/floating_spacing_md"
         android:textColor="#FFFFFF"
         android:textColorHint="#888888"
-        android:textSize="16sp" />
+        android:textSize="@dimen/floating_text_h3" />
 
     <View
         android:layout_width="match_parent"
@@ -57,8 +57,8 @@
             android:layout_height="40dp"
             android:layout_marginEnd="8dp"
             android:background="@android:color/transparent"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
+            android:paddingStart="@dimen/floating_spacing_xl"
+            android:paddingEnd="@dimen/floating_spacing_xl"
             android:text="取消"
             android:textColor="#FFFFFF" />
 
@@ -67,8 +67,8 @@
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:background="@android:color/transparent"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
+            android:paddingStart="@dimen/floating_spacing_xl"
+            android:paddingEnd="@dimen/floating_spacing_xl"
             android:text="确定"
             android:textColor="#2196F3" />
     </LinearLayout>

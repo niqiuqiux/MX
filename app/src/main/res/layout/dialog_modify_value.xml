@@ -62,7 +62,7 @@
                 <EditText
                     android:id="@+id/input_value"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
+                    android:layout_height="@dimen/floating_height_button_sm"
                     android:background="@android:color/transparent"
                     android:cursorVisible="true"
                     android:focusable="true"
@@ -117,7 +117,7 @@
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/btn_value_type"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="@dimen/floating_height_button_sm"
                 android:layout_weight="1"
                 android:background="@drawable/bg_transparent_border"
                 android:clickable="true"

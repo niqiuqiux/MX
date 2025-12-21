@@ -16,13 +16,13 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="20dp"
-        android:paddingBottom="12dp">
+        android:padding="@dimen/floating_spacing_lg"
+        android:paddingBottom="@dimen/floating_spacing_md">
 
         <ImageView
             android:id="@+id/icon_title"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="@dimen/floating_icon_md"
+            android:layout_height="@dimen/floating_icon_md"
             android:src="@drawable/icon_delete_24px"
             android:layout_marginEnd="12dp"
             android:contentDescription="@string/label_remove" />
@@ -34,7 +34,7 @@
             android:layout_weight="1"
             android:text="@string/dialog_remove_title"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="@dimen/floating_text_h2"
             android:textStyle="bold" />
 
     </LinearLayout>
@@ -50,7 +50,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="@dimen/floating_spacing_sm">
 
         <!-- 移除全部选项 -->
         <LinearLayout
@@ -60,13 +60,13 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/bg_settings_item_ripple"
-            android:padding="16dp"
+            android:padding="@dimen/floating_spacing_lg"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="@dimen/floating_icon_md"
+                android:layout_height="@dimen/floating_icon_md"
                 android:src="@drawable/icon_delete_24px"
                 android:tint="#FF5252"
                 android:layout_marginEnd="16dp"
@@ -78,7 +78,7 @@
                 android:layout_weight="1"
                 android:text="@string/option_remove_all"
                 android:textColor="#FF5252"
-                android:textSize="15sp"
+                android:textSize="@dimen/floating_text_h3"
                 android:textStyle="bold" />
 
         </LinearLayout>
@@ -91,14 +91,14 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/bg_settings_item_ripple"
-            android:padding="16dp"
+            android:padding="@dimen/floating_spacing_lg"
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="@dimen/floating_icon_md"
+                android:layout_height="@dimen/floating_icon_md"
                 android:src="@drawable/history_24px"
                 android:tint="#FFAB00"
                 android:layout_marginEnd="16dp"
@@ -111,7 +111,7 @@
                 android:layout_weight="1"
                 android:text="@string/option_restore_and_remove"
                 android:textColor="#FFAB00"
-                android:textSize="15sp" />
+                android:textSize="@dimen/floating_text_h3" />
 
         </LinearLayout>
 
@@ -123,14 +123,14 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/bg_settings_item_ripple"
-            android:padding="16dp"
+            android:padding="@dimen/floating_spacing_lg"
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="@dimen/floating_icon_md"
+                android:layout_height="@dimen/floating_icon_md"
                 android:src="@drawable/deselect_24px"
                 android:tint="#FF5252"
                 android:layout_marginEnd="16dp"
@@ -143,7 +143,7 @@
                 android:layout_weight="1"
                 android:text="@string/option_remove_selected"
                 android:textColor="#FF5252"
-                android:textSize="15sp" />
+                android:textSize="@dimen/floating_text_h3" />
 
         </LinearLayout>
 
@@ -161,7 +161,7 @@
         android:layout_height="wrap_content"
         android:gravity="end"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="@dimen/floating_spacing_sm">
 
         <Button
             android:id="@+id/btn_cancel"
@@ -170,8 +170,8 @@
             android:layout_height="wrap_content"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:minWidth="64dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
+            android:paddingHorizontal="@dimen/floating_spacing_lg"
+            android:paddingVertical="@dimen/floating_spacing_sm"
             android:text="@string/button_cancel"
             android:textColor="#CCCCCC" />
 

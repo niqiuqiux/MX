@@ -6,9 +6,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_equal"
@@ -49,9 +49,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_dot"
@@ -92,9 +92,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_tilde"
@@ -135,9 +135,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_backslash"
@@ -178,9 +178,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_comma"

@@ -4,9 +4,9 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_settings_item_ripple"
     android:gravity="center_vertical"
-    android:minHeight="48dp"
+    android:minHeight="@dimen/floating_touch_target"
     android:orientation="horizontal"
-    android:padding="4dp">
+    android:padding="@dimen/floating_spacing_xs">
 
     <CheckBox
         android:id="@android:id/checkbox"
@@ -24,6 +24,6 @@
         android:layout_weight="1"
         android:gravity="center_vertical"
         android:textColor="#FFFFFF"
-        android:textSize="15sp" />
+        android:textSize="@dimen/floating_text_h3" />
 
 </LinearLayout>

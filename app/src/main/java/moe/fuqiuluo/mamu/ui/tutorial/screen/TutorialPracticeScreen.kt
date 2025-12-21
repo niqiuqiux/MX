@@ -1,32 +1,29 @@
 package moe.fuqiuluo.mamu.ui.tutorial.screen
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import moe.fuqiuluo.mamu.driver.LocalMemoryOps
-import moe.fuqiuluo.mamu.ui.theme.MXTheme
+import moe.fuqiuluo.mamu.ui.theme.Dimens
+import moe.fuqiuluo.mamu.ui.theme.rememberAdaptiveLayoutInfo
 
-/**
- * 练习界面 - 单值搜索练习
- * 目标：让用户通过悬浮窗搜索内存并将值修改为 114514
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TutorialPracticeScreen(
+    windowSizeClass: WindowSizeClass,
     onBack: () -> Unit
 ) {
+    val adaptiveLayout = rememberAdaptiveLayoutInfo(windowSizeClass)
     // 分配内存并存储初始值 42
     var memoryAddress by remember { mutableStateOf(0UL) }
     var currentValue by remember { mutableIntStateOf(42) }
@@ -77,246 +74,232 @@ fun TutorialPracticeScreen(
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 说明卡片
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .widthIn(max = adaptiveLayout.contentMaxWidth)
+                    .fillMaxWidth()
+                    .padding(paddingValues)
+                    .padding(Dimens.paddingLg(adaptiveLayout)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd(adaptiveLayout))
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+                // 说明卡片
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(Dimens.paddingLg(adaptiveLayout))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.School,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "练习目标",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "使用悬浮窗搜索下方显示的数值，找到内存地址后将其修改为 114514",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // 步骤提示
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "操作步骤",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val steps = listOf(
-                        "启动悬浮窗",
-                        "选择进程：moe.fuqiuluo.mamu (PID: ${LocalMemoryOps.getPid()})",
-                        "搜索当前值：$currentValue",
-                        "使用 +1/-1 按钮改变值",
-                        "再次搜索新值筛选结果",
-                        "重复直到找到唯一地址",
-                        "修改该地址的值为 114514"
-                    )
-
-                    steps.forEachIndexed { index, step ->
                         Row(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm(adaptiveLayout))
                         ) {
-                            Text(
-                                text = "${index + 1}.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.width(20.dp)
+                            Icon(
+                                imageVector = Icons.Default.School,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = step,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                text = "练习目标",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                         }
+                        Spacer(modifier = Modifier.height(Dimens.spacingSm(adaptiveLayout)))
+                        Text(
+                            text = "使用悬浮窗搜索下方显示的数值，找到内存地址后将其修改为 114514",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 数值显示卡片
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSuccess) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // 内存地址
-                    Text(
-                        text = "内存地址",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (memoryAddress != 0UL) {
-                            // 屏蔽 MTE/TBI 标签，只显示低 48 位有效地址
-                            val cleanAddress = memoryAddress and 0x0000FFFFFFFFFFFFUL
-                            "0x${cleanAddress.toString(16).uppercase()}"
-                        } else {
-                            "分配中..."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 当前值
-                    Text(
-                        text = "当前值",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = currentValue.toString(),
-                        style = MaterialTheme.typography.displayLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSuccess) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // +1 / -1 按钮
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        FilledTonalButton(
-                            onClick = {
-                                if (memoryAddress != 0UL) {
-                                    val newValue = currentValue - 1
-                                    LocalMemoryOps.writeInt(memoryAddress, newValue)
-                                    currentValue = newValue
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Remove, contentDescription = null)
-                        }
-
-                        FilledTonalButton(
-                            onClick = {
-                                if (memoryAddress != 0UL) {
-                                    val newValue = currentValue + 1
-                                    LocalMemoryOps.writeInt(memoryAddress, newValue)
-                                    currentValue = newValue
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                        }
-                    }
-                }
-            }
-
-            // 成功提示
-            if (isSuccess) {
+                // 步骤提示
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Column(
+                        modifier = Modifier.padding(Dimens.paddingMd(adaptiveLayout))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
+                        Text(
+                            text = "操作步骤",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
                         )
-                        Column {
-                            Text(
-                                text = "恭喜完成！",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = "你已经学会了基本的单值搜索和修改",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        Spacer(modifier = Modifier.height(Dimens.spacingXs(adaptiveLayout)))
+
+                        val steps = listOf(
+                            "启动悬浮窗",
+                            "选择进程：moe.fuqiuluo.mamu (PID: ${LocalMemoryOps.getPid()})",
+                            "搜索当前值：$currentValue",
+                            "使用 +1/-1 按钮改变值",
+                            "再次搜索新值筛选结果",
+                            "重复直到找到唯一地址",
+                            "修改该地址的值为 114514"
+                        )
+
+                        steps.forEachIndexed { index, step ->
+                            Row(
+                                modifier = Modifier.padding(vertical = Dimens.spacingXxs(adaptiveLayout)),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "${index + 1}.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.width(Dimens.stepNumberWidth(adaptiveLayout))
+                                )
+                                Text(
+                                    text = step,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
+
+                // 数值显示卡片
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSuccess) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(Dimens.paddingLg(adaptiveLayout))
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 内存地址
+                        Text(
+                            text = "内存地址",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (memoryAddress != 0UL) {
+                                // 屏蔽 MTE/TBI 标签，只显示低 48 位有效地址
+                                val cleanAddress = memoryAddress and 0x0000FFFFFFFFFFFFUL
+                                "0x${cleanAddress.toString(16).uppercase()}"
+                            } else {
+                                "分配中..."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
+
+                        // 当前值
+                        Text(
+                            text = "当前值",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = currentValue.toString(),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSuccess) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
+
+                        // +1 / -1 按钮
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingLg(adaptiveLayout))
+                        ) {
+                            FilledTonalButton(
+                                onClick = {
+                                    if (memoryAddress != 0UL) {
+                                        val newValue = currentValue - 1
+                                        LocalMemoryOps.writeInt(memoryAddress, newValue)
+                                        currentValue = newValue
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = null)
+                            }
+
+                            FilledTonalButton(
+                                onClick = {
+                                    if (memoryAddress != 0UL) {
+                                        val newValue = currentValue + 1
+                                        LocalMemoryOps.writeInt(memoryAddress, newValue)
+                                        currentValue = newValue
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                            }
+                        }
+                    }
+                }
+
+                // 成功提示
+                if (isSuccess) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(Dimens.paddingLg(adaptiveLayout)),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd(adaptiveLayout))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(Dimens.iconLg(adaptiveLayout))
+                            )
+                            Column {
+                                Text(
+                                    text = "恭喜完成！",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "你已经学会了基本的单值搜索和修改",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 目标提示
+                Text(
+                    text = "目标值：114514",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // 目标提示
-            Text(
-                text = "目标值：114514",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
-            )
         }
-    }
-}
-
-// ============ Previews ============
-
-@Preview(
-    name = "Light Mode",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun TutorialPracticeScreenPreview() {
-    MXTheme {
-        // Note: Preview won't work with actual memory operations
-        TutorialPracticeScreen(onBack = {})
     }
 }

@@ -335,7 +335,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="end"
-                            android:minWidth="80dp"
+                            android:minWidth="@dimen/floating_min_button_width"
                             android:text="33000 μs" />
 
                     </LinearLayout>
@@ -547,7 +547,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="end"
-                            android:minWidth="80dp"
+                            android:minWidth="@dimen/floating_min_button_width"
                             android:text="1000 ms" />
 
                     </LinearLayout>
@@ -630,7 +630,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="end"
-                            android:minWidth="48dp"
+                            android:minWidth="@dimen/floating_touch_target"
                             android:text="55%" />
 
                     </LinearLayout>

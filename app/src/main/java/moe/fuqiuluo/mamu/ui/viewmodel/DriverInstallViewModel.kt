@@ -76,7 +76,7 @@ class DriverInstallViewModel : ViewModel() {
                         selectedDriver = null
                     )
                     // 延迟2秒后触发重启
-                    delay(2000)
+                    delay(3000)
                     _uiState.value = _uiState.value.copy(shouldRestartApp = true)
                 } else {
                     _uiState.value = _uiState.value.copy(

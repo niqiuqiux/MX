@@ -75,7 +75,7 @@
             android:maxLines="1"
             android:text="(100)"
             android:textColor="#88FFFFFF"
-            android:textSize="11sp"
+            android:textSize="@dimen/floating_text_small"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/info_container"

@@ -4,13 +4,13 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:padding="@dimen/floating_spacing_sm">
 
     <!-- App Icon -->
     <ImageView
         android:id="@+id/process_icon"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="@dimen/floating_icon_lg"
+        android:layout_height="@dimen/floating_icon_lg"
         android:layout_marginEnd="8dp"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
@@ -22,10 +22,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="4dp"
-        android:paddingEnd="4dp"
+        android:paddingEnd="@dimen/floating_spacing_xs"
         android:text="@string/placeholder_pid"
         android:textColor="#00BCD4"
-        android:textSize="12sp"
+        android:textSize="@dimen/floating_text_caption"
         android:textStyle="bold" />
 
     <!-- Process Name -->
@@ -37,10 +37,10 @@
         android:ellipsize="end"
         android:maxLength="24"
         android:maxLines="1"
-        android:paddingEnd="4dp"
+        android:paddingEnd="@dimen/floating_spacing_xs"
         android:text="@string/placeholder_process_name"
         android:textColor="#FFFFFF"
-        android:textSize="13sp" />
+        android:textSize="@dimen/floating_text_body" />
 
     <!-- Memory Usage -->
     <TextView
@@ -48,10 +48,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#1AFF9800"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
+        android:paddingStart="@dimen/floating_spacing_xs"
+        android:paddingEnd="@dimen/floating_spacing_xs"
         android:text="@string/placeholder_memory_size"
         android:textColor="#FF9800"
-        android:textSize="11sp" />
+        android:textSize="@dimen/floating_text_small" />
 
 </LinearLayout>

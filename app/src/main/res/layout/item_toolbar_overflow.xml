@@ -4,17 +4,17 @@
     android:layout_height="wrap_content"
     android:background="@android:color/transparent"
     android:gravity="center_vertical"
-    android:minHeight="48dp"
+    android:minHeight="@dimen/floating_touch_target"
     android:orientation="horizontal"
-    android:paddingStart="16dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="12dp">
+    android:paddingStart="@dimen/floating_spacing_lg"
+    android:paddingTop="@dimen/floating_spacing_md"
+    android:paddingEnd="@dimen/floating_spacing_lg"
+    android:paddingBottom="@dimen/floating_spacing_md">
 
     <ImageView
         android:id="@+id/overflow_item_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="@dimen/floating_icon_md"
+        android:layout_height="@dimen/floating_icon_md"
         android:scaleType="centerInside"
         android:tint="#FFFFFF" />
 
@@ -26,6 +26,6 @@
         android:layout_weight="1"
         android:text="@string/content_desc_menu"
         android:textColor="#FFFFFF"
-        android:textSize="16sp" />
+        android:textSize="@dimen/floating_text_h3" />
 
 </LinearLayout>

@@ -6,8 +6,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_a"
@@ -48,8 +49,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_e"
@@ -90,8 +92,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_h"
@@ -131,8 +134,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_r"
@@ -174,8 +178,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="@dimen/floating_height_button"
+        android:orientation="horizontal"
+        android:weightSum="7">
 
         <Button
             android:id="@+id/key_q"

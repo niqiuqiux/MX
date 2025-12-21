@@ -1,6 +1,5 @@
 package moe.fuqiuluo.mamu.ui.tutorial.components
 
-import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -19,10 +18,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import moe.fuqiuluo.mamu.ui.theme.MXTheme
+import moe.fuqiuluo.mamu.ui.theme.AdaptiveLayoutInfo
+import moe.fuqiuluo.mamu.ui.theme.Dimens
 
 /**
  * Tutorial step data class
@@ -112,6 +111,7 @@ val defaultTutorialSteps = listOf(
  */
 @Composable
 fun TutorialDialog(
+    adaptiveLayout: AdaptiveLayoutInfo,
     onDismiss: () -> Unit,
     onComplete: () -> Unit,
     onStartPractice: (() -> Unit)? = null,
@@ -145,7 +145,7 @@ fun TutorialDialog(
 
                 // Right side: action buttons
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm(adaptiveLayout))
                 ) {
                     if (pagerState.currentPage < steps.size - 1) {
                         // Skip button
@@ -161,11 +161,11 @@ fun TutorialDialog(
                             }
                         ) {
                             Text("下一步")
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(Dimens.spacingXs(adaptiveLayout)))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(Dimens.iconXs(adaptiveLayout))
                             )
                         }
                     } else {
@@ -187,14 +187,14 @@ fun TutorialDialog(
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)
+                        .height(Dimens.scaled(adaptiveLayout, 320f))
                 ) { page ->
-                    TutorialStepContent(step = steps[page])
+                    TutorialStepContent(adaptiveLayout = adaptiveLayout, step = steps[page])
                 }
 
                 // Practice button on last page
                 if (onStartPractice != null && pagerState.currentPage == steps.size - 1) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spacingMd(adaptiveLayout)))
                     OutlinedButton(
                         onClick = onStartPractice,
                         modifier = Modifier.fillMaxWidth()
@@ -202,14 +202,14 @@ fun TutorialDialog(
                         Icon(
                             imageVector = Icons.Default.School,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(Dimens.iconSm(adaptiveLayout))
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Dimens.spacingSm(adaptiveLayout)))
                         Text("进入练习模式")
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
 
                 // Page indicators
                 Row(
@@ -220,8 +220,8 @@ fun TutorialDialog(
                         val isSelected = pagerState.currentPage == index
                         Box(
                             modifier = Modifier
-                                .padding(horizontal = 4.dp)
-                                .size(if (isSelected) 10.dp else 8.dp)
+                                .padding(horizontal = Dimens.spacingXs(adaptiveLayout))
+                                .size(if (isSelected) Dimens.scaled(adaptiveLayout, 10f) else Dimens.spacingSm(adaptiveLayout))
                                 .clip(CircleShape)
                                 .background(
                                     if (isSelected) {
@@ -239,12 +239,12 @@ fun TutorialDialog(
 }
 
 @Composable
-private fun TutorialStepContent(step: TutorialStep) {
+private fun TutorialStepContent(adaptiveLayout: AdaptiveLayoutInfo, step: TutorialStep) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(8.dp),
+            .padding(Dimens.paddingSm(adaptiveLayout)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -252,11 +252,11 @@ private fun TutorialStepContent(step: TutorialStep) {
         Icon(
             imageVector = step.icon,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(Dimens.iconXxl(adaptiveLayout)),
             tint = MaterialTheme.colorScheme.primary
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
 
         // Title
         Text(
@@ -266,7 +266,7 @@ private fun TutorialStepContent(step: TutorialStep) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Dimens.spacingMd(adaptiveLayout)))
 
         // Description
         Text(
@@ -278,7 +278,7 @@ private fun TutorialStepContent(step: TutorialStep) {
 
         // Tips
         if (step.tips.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spacingLg(adaptiveLayout)))
 
             Card(
                 colors = CardDefaults.cardColors(
@@ -287,22 +287,22 @@ private fun TutorialStepContent(step: TutorialStep) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(Dimens.paddingMd(adaptiveLayout))
                 ) {
                     step.tips.forEach { tip ->
                         Row(
-                            modifier = Modifier.padding(vertical = 2.dp),
+                            modifier = Modifier.padding(vertical = Dimens.spacingXxs(adaptiveLayout)),
                             verticalAlignment = Alignment.Top
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .size(16.dp)
-                                    .padding(top = 2.dp),
+                                    .size(Dimens.iconXs(adaptiveLayout))
+                                    .padding(top = Dimens.spacingXxs(adaptiveLayout)),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(Dimens.spacingSm(adaptiveLayout)))
                             Text(
                                 text = tip,
                                 style = MaterialTheme.typography.bodySmall,
@@ -312,47 +312,6 @@ private fun TutorialStepContent(step: TutorialStep) {
                     }
                 }
             }
-        }
-    }
-}
-
-// ============ Previews ============
-
-@Preview(
-    name = "Light Mode",
-    showBackground = true
-)
-@Preview(
-    name = "Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun TutorialDialogPreview() {
-    MXTheme {
-        TutorialDialog(
-            onDismiss = {},
-            onComplete = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Tutorial Step - Light",
-    showBackground = true
-)
-@Preview(
-    name = "Tutorial Step - Dark",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-private fun TutorialStepPreview() {
-    MXTheme {
-        Surface {
-            TutorialStepContent(
-                step = defaultTutorialSteps[3] // Search step
-            )
         }
     }
 }
