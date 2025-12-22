@@ -149,7 +149,6 @@ class MemoryPreviewController(
             FloatingEventBus.navigateToMemoryAddressEvents.collect { event ->
                 // 跳转到指定地址
                 jumpToPage(event.address)
-                notification.showSuccess("已跳转到地址: ${String.format("%X", event.address)}")
             }
         }
     }
@@ -417,127 +416,166 @@ class MemoryPreviewController(
 
         // 整个流程在 Default 线程执行，减少调度开销
         coroutineScope.launch(Dispatchers.Default) {
+            try {
 //            val t2 = System.currentTimeMillis()
 //            Log.d(TAG, "[2] 协程启动, 耗时=${t2 - t1}ms")
 
-            // 检查内存区域缓存是否有效
-            val cacheInterval = mmkv.memoryRegionCacheInterval.toLong()
-            val now = System.currentTimeMillis()
-            val cacheValid = cacheInterval > 0 &&
-                    memoryRegions.isNotEmpty() &&
-                    (now - memoryRegionsCacheTime) < cacheInterval
+                // 检查内存区域缓存是否有效
+                val cacheInterval = mmkv.memoryRegionCacheInterval.toLong()
+                val now = System.currentTimeMillis()
+                val cacheValid = cacheInterval > 0 &&
+                        memoryRegions.isNotEmpty() &&
+                        (now - memoryRegionsCacheTime) < cacheInterval
 
-            // 并行：查询内存区域（如果缓存失效）+ 读取内存
-            val regionsDeferred = if (!cacheValid) {
-                async {
-                    WuwaDriver.queryMemRegions().divideToSimpleMemoryRangeParallel()
-                        .sortedBy { it.start }
+                // 并行：查询内存区域（如果缓存失效）+ 读取内存
+                val regionsDeferred = if (!cacheValid) {
+                    async {
+                        WuwaDriver.queryMemRegionsWithRetry().divideToSimpleMemoryRangeParallel()
+                            .sortedBy { it.start }
+                    }
+                } else null
+
+                val memoryDeferred = async(Dispatchers.IO) {
+                    WuwaDriver.readMemory(pageStartAddress, PAGE_SIZE)
                 }
-            } else null
 
-            val memoryDeferred = async(Dispatchers.IO) {
-                WuwaDriver.readMemory(pageStartAddress, PAGE_SIZE)
-            }
-
-            val sortedRegions = if (regionsDeferred != null) {
-                val regions = regionsDeferred.await()
-                memoryRegions = regions
-                memoryRegionsCacheTime = now
-                regions
-            } else {
-                memoryRegions
-            }
+                val sortedRegions = if (regionsDeferred != null) {
+                    val regions = regionsDeferred.await()
+                    memoryRegions = regions
+                    memoryRegionsCacheTime = now
+                    regions
+                } else {
+                    memoryRegions
+                }
 //            val t3 = System.currentTimeMillis()
 //            Log.d(
 //                TAG,
 //                "[3] 查询内存区域: 区域数=${sortedRegions.size}, 缓存=${cacheValid}, 耗时=${t3 - t2}ms"
 //            )
 
-            val memoryData = memoryDeferred.await()
-//            val t4 = System.currentTimeMillis()
-//            Log.d(TAG, "[4] 读取内存: 大小=${memoryData?.size ?: 0}bytes, 耗时=${t4 - t3}ms")
-
-            // 构建最终列表
-            val items = mutableListOf<MemoryPreviewItem>()
-            val maxRows = PAGE_SIZE / alignment
-            var highlightedRowIndex = -1
-
-            // 添加上一页导航（如果不是第一页）
-            if (pageStartAddress > 0) {
-                val prevAddress = (pageStartAddress - PAGE_SIZE).coerceAtLeast(0)
-                items.add(MemoryPreviewItem.PageNavigation(prevAddress, isNext = false))
-            }
-
-            if (memoryData == null) {
-                // 内存读取失败，显示占位符
-                var address = pageStartAddress
-                repeat(maxRows) {
-                    val isHighlighted = highlightAddress != null &&
-                            highlightAddress >= address &&
-                            highlightAddress < address + alignment
-                    if (isHighlighted) {
-                        highlightedRowIndex = items.size
-                    }
-
-                    val placeholderValues = formats.map { format ->
-                        FormattedValue(format, "?", format.textColor)
-                    }
-                    items.add(
-                        MemoryPreviewItem.MemoryRow(
-                            address = address,
-                            formattedValues = placeholderValues,
-                            memoryRange = findMemoryRangeBinary(address, sortedRegions),
-                            isHighlighted = isHighlighted
-                        )
-                    )
-                    address += alignment
-                }
-            } else {
-                // 解析内存数据（已经在 Default 线程）
-                val parseResult = parseMemoryData(
-                    memoryData = memoryData,
-                    pageStartAddress = pageStartAddress,
-                    highlightAddress = highlightAddress,
-                    alignment = alignment,
-                    hexByteSize = hexByteSize,
-                    formats = formats,
-                    sortedRegions = sortedRegions
+                val memoryData = memoryDeferred.await()
+                Log.d(
+                    TAG,
+                    "[4] 读取内存: 地址=0x${
+                        pageStartAddress.toString(16).uppercase()
+                    }, 大小=${memoryData?.size ?: 0}bytes, 结果=${if (memoryData != null) "成功" else "失败(null)"}"
                 )
-                highlightedRowIndex = if (pageStartAddress > 0) {
-                    parseResult.highlightedRowIndex + 1 // 加上上一页导航的位置
-                } else {
-                    parseResult.highlightedRowIndex
+
+                // 构建最终列表
+                val items = mutableListOf<MemoryPreviewItem>()
+                val maxRows = PAGE_SIZE / alignment
+                var highlightedRowIndex = -1
+
+                // 添加上一页导航（如果不是第一页）
+                if (pageStartAddress > 0) {
+                    val prevAddress = (pageStartAddress - PAGE_SIZE).coerceAtLeast(0)
+                    items.add(MemoryPreviewItem.PageNavigation(prevAddress, isNext = false))
                 }
-                items.addAll(parseResult.rows)
-            }
+
+                if (memoryData == null) {
+                    // 内存读取失败，显示占位符
+                    Log.w(
+                        TAG,
+                        "内存读取失败: pageStartAddress=0x${
+                            pageStartAddress.toString(16).uppercase()
+                        }, 进程=${WuwaDriver.currentBindPid}"
+                    )
+                    withContext(Dispatchers.Main) {
+                        notification.showError(
+                            "内存读取失败: 地址 0x${
+                                pageStartAddress.toString(16).uppercase()
+                            } 可能不可访问"
+                        )
+                    }
+
+                    var address = pageStartAddress
+                    repeat(maxRows) {
+                        val isHighlighted = highlightAddress != null &&
+                                highlightAddress >= address &&
+                                highlightAddress < address + alignment
+                        if (isHighlighted) {
+                            highlightedRowIndex = items.size
+                        }
+
+                        val placeholderValues = formats.map { format ->
+                            FormattedValue(format, "?", format.textColor)
+                        }
+                        items.add(
+                            MemoryPreviewItem.MemoryRow(
+                                address = address,
+                                formattedValues = placeholderValues,
+                                memoryRange = findMemoryRangeBinary(address, sortedRegions),
+                                isHighlighted = isHighlighted
+                            )
+                        )
+                        address += alignment
+                    }
+                } else {
+                    // 解析内存数据（已经在 Default 线程）
+                    val parseResult = parseMemoryData(
+                        memoryData = memoryData,
+                        pageStartAddress = pageStartAddress,
+                        highlightAddress = highlightAddress,
+                        alignment = alignment,
+                        hexByteSize = hexByteSize,
+                        formats = formats,
+                        sortedRegions = sortedRegions
+                    )
+                    highlightedRowIndex = if (pageStartAddress > 0) {
+                        parseResult.highlightedRowIndex + 1 // 加上上一页导航的位置
+                    } else {
+                        parseResult.highlightedRowIndex
+                    }
+                    items.addAll(parseResult.rows)
+                }
 //            val t5 = System.currentTimeMillis()
 //            Log.d(TAG, "[5] 解析内存完成: 解析${items.size}行, 耗时=${t5 - t4}ms")
 
-            // 添加下一页导航
-            val nextAddress = pageStartAddress + PAGE_SIZE
-            items.add(MemoryPreviewItem.PageNavigation(nextAddress, isNext = true))
+                // 添加下一页导航
+                val nextAddress = pageStartAddress + PAGE_SIZE
+                items.add(MemoryPreviewItem.PageNavigation(nextAddress, isNext = true))
 
-            // 切回主线程更新 UI
-            withContext(Dispatchers.Main) {
-                adapter.setItems(items)
-                updateEmptyState()
+                // 切回主线程更新 UI
+                withContext(Dispatchers.Main) {
+                    adapter.setItems(items)
+                    updateEmptyState()
 //                val t6 = System.currentTimeMillis()
 //                Log.d(TAG, "[6] 更新UI完成: 耗时=${t6 - t5}ms")
 
-                // 滚动到高亮的行，放在视觉中间位置
-                if (highlightedRowIndex >= 0) {
-                    val layoutManager =
-                        binding.memoryPreviewRecyclerView.layoutManager as? LinearLayoutManager
-                    if (layoutManager != null) {
-                        // 计算偏移量使目标居中
-                        val recyclerHeight = binding.memoryPreviewRecyclerView.height
-                        val offset = recyclerHeight / 2
-                        layoutManager.scrollToPositionWithOffset(highlightedRowIndex, offset)
+                    // 滚动到高亮的行，放在视觉中间位置
+                    if (highlightedRowIndex >= 0) {
+                        val layoutManager =
+                            binding.memoryPreviewRecyclerView.layoutManager as? LinearLayoutManager
+                        if (layoutManager != null) {
+                            // 计算偏移量使目标居中
+                            val recyclerHeight = binding.memoryPreviewRecyclerView.height
+                            val offset = recyclerHeight / 2
+                            layoutManager.scrollToPositionWithOffset(highlightedRowIndex, offset)
+                        }
                     }
-                }
 
+                    notification.showSuccess(
+                        "已跳转到地址: ${
+                            String.format(
+                                "%X",
+                                pageStartAddress
+                            )
+                        }"
+                    )
 //                val totalTime = System.currentTimeMillis() - startTime
 //                Log.d(TAG, "━━━━━ loadPage 完成: 总耗时=${totalTime}ms ━━━━━\n")
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    TAG,
+                    "loadPage 异常: pageStartAddress=0x${
+                        pageStartAddress.toString(16).uppercase()
+                    }",
+                    e
+                )
+                withContext(Dispatchers.Main) {
+                    notification.showError("加载内存页失败: ${e.message}")
+                }
             }
         }
     }
@@ -884,7 +922,8 @@ class MemoryPreviewController(
             // 异步读取当前内存值
             val currentValue = withContext(Dispatchers.IO) {
                 try {
-                    val bytes = WuwaDriver.readMemory(memoryRow.address, defaultType.memorySize.toInt())
+                    val bytes =
+                        WuwaDriver.readMemory(memoryRow.address, defaultType.memorySize.toInt())
                     if (bytes != null) {
                         ValueTypeUtils.bytesToDisplayValue(bytes, defaultType)
                     } else {

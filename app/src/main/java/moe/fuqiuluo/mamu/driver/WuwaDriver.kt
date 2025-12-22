@@ -37,6 +37,22 @@ object WuwaDriver {
 
     fun queryMemRegions(pid: Int = currentBindPid) = nativeQueryMemRegions(pid)
 
+    fun queryMemRegionsWithRetry(
+        pid: Int = currentBindPid,
+        retryCount: Int = 3
+    ): Array<MemRegionEntry> {
+        repeat(retryCount) {
+            runCatching {
+                queryMemRegions(pid)
+            }.onSuccess {
+                return it
+            }.onFailure {
+                it.printStackTrace()
+            }
+        }
+        throw RuntimeException("failed to queryMemRegions")
+    }
+
     fun setDriverFd(fd: Int): Boolean = nativeSetDriverFd(fd)
 
     /**
@@ -53,7 +69,8 @@ object WuwaDriver {
      * @param sizes 每个地址对应的读取大小
      * @return 读取的字节数组，失败的位置为null
      */
-    fun batchReadMemory(addrs: LongArray, sizes: IntArray): Array<ByteArray?> = nativeBatchReadMemory(addrs, sizes)
+    fun batchReadMemory(addrs: LongArray, sizes: IntArray): Array<ByteArray?> =
+        nativeBatchReadMemory(addrs, sizes)
 
     /**
      * 统一的内存写入方法，使用当前配置的 access_mode
@@ -69,7 +86,8 @@ object WuwaDriver {
      * @param dataArray 每个地址对应的数据
      * @return 每个地址写入是否成功的结果数组
      */
-    fun batchWriteMemory(addrs: LongArray, dataArray: Array<ByteArray>): BooleanArray = nativeBatchWriteMemory(addrs, dataArray)
+    fun batchWriteMemory(addrs: LongArray, dataArray: Array<ByteArray>): BooleanArray =
+        nativeBatchWriteMemory(addrs, dataArray)
 
     /**
      * 获取可用的驱动列表
@@ -82,7 +100,8 @@ object WuwaDriver {
      * @param driverName 驱动名称
      * @return 安装结果
      */
-    fun downloadAndInstallDriver(driverName: String): DriverInstallResult = nativeDownloadAndInstallDriver(driverName)
+    fun downloadAndInstallDriver(driverName: String): DriverInstallResult =
+        nativeDownloadAndInstallDriver(driverName)
 
     /**
      * 检查驱动是否已安装
@@ -105,7 +124,11 @@ object WuwaDriver {
     private external fun nativeReadMemory(addr: Long, size: Int): ByteArray?
     private external fun nativeBatchReadMemory(addrs: LongArray, sizes: IntArray): Array<ByteArray?>
     private external fun nativeWriteMemory(addr: Long, data: ByteArray): Boolean
-    private external fun nativeBatchWriteMemory(addrs: LongArray, dataArray: Array<ByteArray>): BooleanArray
+    private external fun nativeBatchWriteMemory(
+        addrs: LongArray,
+        dataArray: Array<ByteArray>
+    ): BooleanArray
+
     private external fun nativeGetAvailableDrivers(): Array<DriverInfo>
     private external fun nativeDownloadAndInstallDriver(driverName: String): DriverInstallResult
     private external fun nativeIsDriverInstalled(): Boolean
