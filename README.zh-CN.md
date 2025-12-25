@@ -2,7 +2,7 @@
 
 **一个类似于GameGuardion的内存修改器**，使用Kotlin+Rust编写，基于[android-wuwa](https://github.com/fuqiuluo/android-wuwa)实现！
 
-[![许可证](https://img.shields.io/badge/license-GPLv3-green.svg)](/LICENSE)
+[![许可证](https://img.shields.io/badge/license-GPLv3-green.svg)](https://github.com/Shirasuki/MX/blob/master/LICENSE)
 [![平台](https://img.shields.io/badge/platform-Android%207.0%2B-orange.svg)](https://developer.android.com)
 [![语言](https://img.shields.io/badge/language-Kotlin%20%2B%20Rust-purple.svg)](https://kotlinlang.org)
 
@@ -73,7 +73,7 @@
 
 ### 选项 A：下载预构建 APK
 
-> **即将推出**：预构建 APK 版本将在 [Releases](/releases) 页面提供
+> **即将推出**：预构建 APK 版本将在 [Releases](https://github.com/Shirasuki/MX/releases) 页面提供
 
 1. 从发布页面下载最新 APK
 2. 在 Android 设置中启用"未知来源安装"
@@ -261,6 +261,6 @@ Mamu 采用分层混合架构，将 Kotlin 用于 UI/展示层，Rust 用于性�
 
 ---
 
-本项目基于 **GNU 通用公共许可证 v3.0（GPLv3）** 授权，有关完整许可证文本，请参阅 [LICENSE](/LICENSE) 文件。
+本项目基于 **GNU 通用公共许可证 v3.0（GPLv3）** 授权，有关完整许可证文本，请参阅 [LICENSE](https://github.com/Shirasuki/MX/blob/master/LICENSE) 文件。
 
 **[⬆ 返回顶部](#mamu)**

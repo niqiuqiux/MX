@@ -2,7 +2,7 @@
 
 **A memory modifier similar to GameGuardian**, written in Kotlin+Rust, based on [android-wuwa](https://github.com/fuqiuluo/android-wuwa)!
 
-[![License](https://img.shields.io/badge/license-GPLv3-green.svg)](/LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv3-green.svg)](https://github.com/Shirasuki/MX/blob/master/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-orange.svg)](https://developer.android.com)
 [![Language](https://img.shields.io/badge/language-Kotlin%20%2B%20Rust-purple.svg)](https://kotlinlang.org)
 
@@ -54,26 +54,26 @@
 
 ### Device Requirements
 
-| Requirement | Specification |
-|------------|---------------|
-| **Operating System** | Android 7.0+ (API 24+) |
-| **Architecture** | ARM64-v8a (aarch64) only |
-| **Root Access** | Required (Magisk, KernelSU, or SuperSU) |
+| Requirement          | Specification                           |
+|----------------------|-----------------------------------------|
+| **Operating System** | Android 7.0+ (API 24+)                  |
+| **Architecture**     | ARM64-v8a (aarch64) only                |
+| **Root Access**      | Required (Magisk, KernelSU, or SuperSU) |
 
 ### Build Requirements
 
-| Requirement | Version |
-|------------|---------|
-| **Android SDK** | compileSdk 36, targetSdk 35 |
+| Requirement     | Version                           |
+|-----------------|-----------------------------------|
+| **Android SDK** | compileSdk 36, targetSdk 35       |
 | **Android NDK** | Latest stable with LLVM toolchain |
-| **Rust** | Latest stable (1.70+) |
-| **Gradle** | 8.13+ |
+| **Rust**        | Latest stable (1.70+)             |
+| **Gradle**      | 8.13+                             |
 
 ## Installation
 
 ### Option A: Download Pre-built APK
 
-> **Coming Soon**: Pre-built APK releases will be available on the [Releases](/releases) page
+> **Coming Soon**: Pre-built APK releases will be available on the [Releases](https://github.com/Shirasuki/MX/releases) page
 
 1. Download the latest APK from the releases page
 2. Enable "Install from Unknown Sources" in Android settings
@@ -182,12 +182,12 @@ cargo build --target aarch64-linux-android --release
 
 ### Troubleshooting Build Issues
 
-| Issue | Solution |
-|-------|----------|
-| **NDK not found** | Set `ANDROID_NDK_HOME` environment variable or install NDK via SDK Manager |
-| **Rust target missing** | Run `rustup target add aarch64-linux-android` |
-| **Linker errors** | Ensure NDK version has LLVM toolchain (r21+) |
-| **Permission denied on gradlew** | Run `chmod +x gradlew` (Linux/macOS) |
+| Issue                            | Solution                                                                   |
+|----------------------------------|----------------------------------------------------------------------------|
+| **NDK not found**                | Set `ANDROID_NDK_HOME` environment variable or install NDK via SDK Manager |
+| **Rust target missing**          | Run `rustup target add aarch64-linux-android`                              |
+| **Linker errors**                | Ensure NDK version has LLVM toolchain (r21+)                               |
+| **Permission denied on gradlew** | Run `chmod +x gradlew` (Linux/macOS)                                       |
 
 ## Architecture Overview
 
@@ -261,6 +261,6 @@ Contributions are welcome! Whether it's bug fixes, new features, documentation i
 
 ---
 
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](/LICENSE) file for the full license text.
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](https://github.com/Shirasuki/MX/blob/master/LICENSE) file for the full license text.
 
 **[⬆ Back to Top](#mamu)**
