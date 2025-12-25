@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Mamu</string>
+    <string name="app_name">MX</string>
     <string name="close_fullscreen_content_desc">Close</string>
     <string name="floating_icon_content_desc">Yuzusoft</string>
 

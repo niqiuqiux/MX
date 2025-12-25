@@ -8,7 +8,7 @@ use bplustree::BPlusTreeSet;
 use log::{Level, debug, log_enabled, warn};
 use rayon::prelude::*;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 /// 模糊搜索初始扫描
 /// 记录指定内存区域内所有地址的当前值
@@ -21,17 +21,22 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// * `chunk_size` - 每次读取的块大小
 /// * `processed_counter` - 已处理计数器（可选）
 /// * `total_found_counter` - 找到总数计数器（可选）
+/// * `check_cancelled` - 取消检查闭包（可选）
 ///
 /// # 返回
 /// 返回所有成功读取的地址及其值（有序）
-pub(crate) fn fuzzy_initial_scan(
+pub(crate) fn fuzzy_initial_scan<F>(
     value_type: ValueType,
     start: u64,
     end: u64,
     chunk_size: usize,
     processed_counter: Option<&Arc<AtomicUsize>>,
     total_found_counter: Option<&Arc<AtomicUsize>>,
-) -> Result<BPlusTreeSet<FuzzySearchResultItem>> {
+    check_cancelled: Option<&F>,
+) -> Result<BPlusTreeSet<FuzzySearchResultItem>>
+where
+    F: Fn() -> bool,
+{
     let driver_manager = DRIVER_MANAGER.read().map_err(|_| anyhow!("Failed to acquire DriverManager lock"))?;
 
     let element_size = value_type.size();
@@ -46,6 +51,16 @@ pub(crate) fn fuzzy_initial_scan(
     let mut chunk_buffer = vec![0u8; chunk_size];
 
     while current < end {
+        // Check cancellation at each chunk
+        if let Some(check_fn) = check_cancelled {
+            if check_fn() {
+                if log_enabled!(Level::Debug) {
+                    debug!("Fuzzy initial scan cancelled, returning {} results", results.len());
+                }
+                return Ok(results);
+            }
+        }
+
         let chunk_end = (current + chunk_size as u64).min(end);
         let chunk_len = (chunk_end - current) as usize;
 
@@ -222,18 +237,22 @@ fn scan_single_page(
 /// * `condition` - 模糊搜索条件
 /// * `processed_counter` - 已处理计数器（可选）
 /// * `total_found_counter` - 找到总数计数器（可选）
+/// * `update_progress` - 进度更新回调
+/// * `check_cancelled` - 取消检查闭包（可选）
 ///
 /// # 返回
 /// 返回满足条件的结果项（包含新值，有序）
-pub(crate) fn fuzzy_refine_search<P>(
+pub(crate) fn fuzzy_refine_search<P, F>(
     items: &Vec<FuzzySearchResultItem>,
     condition: FuzzyCondition,
     processed_counter: Option<&Arc<AtomicUsize>>,
     total_found_counter: Option<&Arc<AtomicUsize>>,
     update_progress: &P,
+    check_cancelled: Option<&F>,
 ) -> Result<BPlusTreeSet<FuzzySearchResultItem>>
 where
     P: Fn(usize, usize) + Sync,
+    F: Fn() -> bool + Sync,
 {
     if items.is_empty() {
         return Ok(BPlusTreeSet::new(BPLUS_TREE_ORDER));
@@ -247,6 +266,19 @@ where
     let mut items_with_current_value: Vec<(FuzzySearchResultItem, Vec<u8>)> = Vec::with_capacity(total_items);
 
     for (idx, old_item) in items.iter().enumerate() {
+        // Check cancellation periodically (every 100 items)
+        if idx % 100 == 0 {
+            if let Some(check_fn) = check_cancelled {
+                if check_fn() {
+                    if log_enabled!(Level::Debug) {
+                        debug!("Fuzzy refine cancelled after checking {} items, returning {} partial matches", idx, items_with_current_value.len());
+                    }
+                    // Continue to parallel filtering with partial data
+                    break;
+                }
+            }
+        }
+
         let element_size = old_item.value_type.size();
         let mut buffer = vec![0u8; element_size];
 
@@ -270,9 +302,26 @@ where
 
     drop(driver_manager);
 
+    // Add cancellation support for parallel processing
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let cancelled_clone = Arc::clone(&cancelled);
+
     // 使用 rayon 并行匹配条件
     let matched: Vec<FuzzySearchResultItem> = items_with_current_value
         .par_iter()
+        .take_any_while(|_| {
+            // Check cancellation in parallel context
+            if cancelled_clone.load(Ordering::Relaxed) {
+                return false;
+            }
+            if let Some(check_fn) = check_cancelled {
+                if check_fn() {
+                    cancelled_clone.store(true, Ordering::Relaxed);
+                    return false;
+                }
+            }
+            true
+        })
         .filter_map(|(old_item, current_value)| {
             // 检查是否满足条件
             if old_item.matches_condition(current_value, condition) {

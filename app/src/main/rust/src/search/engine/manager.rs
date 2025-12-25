@@ -784,7 +784,21 @@ impl SearchEngineManager {
                         }
                     }
 
-                    let result = fuzzy_search::fuzzy_initial_scan(value_type, *start, *end, chunk_size, None, None);
+                    // Create check_cancelled closure for this region
+                    let check_cancelled_for_region = || -> bool {
+                        if cancel_token_clone.is_cancelled() || cancelled_clone.load(AtomicOrdering::Relaxed) {
+                            return true;
+                        }
+                        if let Ok(manager) = SEARCH_ENGINE_MANAGER.read() {
+                            if manager.shared_buffer.is_cancel_requested() {
+                                cancelled_clone.store(true, AtomicOrdering::Relaxed);
+                                return true;
+                            }
+                        }
+                        false
+                    };
+
+                    let result = fuzzy_search::fuzzy_initial_scan(value_type, *start, *end, chunk_size, None, None, Some(&check_cancelled_for_region));
 
                     let region_results = match result {
                         Ok(results) => results,
@@ -957,7 +971,21 @@ impl SearchEngineManager {
                 }
             };
 
-            fuzzy_search::fuzzy_refine_search(&current_results, condition, Some(&processed_clone), Some(&found_clone), &update_progress).unwrap_or_else(|e| {
+            // Create check_cancelled closure
+            let check_cancelled = || -> bool {
+                if cancel_token_clone.is_cancelled() || cancelled_clone.load(AtomicOrdering::Relaxed) {
+                    return true;
+                }
+                if let Ok(manager) = SEARCH_ENGINE_MANAGER.read() {
+                    if manager.shared_buffer.is_cancel_requested() {
+                        cancelled_clone.store(true, AtomicOrdering::Relaxed);
+                        return true;
+                    }
+                }
+                false
+            };
+
+            fuzzy_search::fuzzy_refine_search(&current_results, condition, Some(&processed_clone), Some(&found_clone), &update_progress, Some(&check_cancelled)).unwrap_or_else(|e| {
                 error!("Fuzzy refine failed: {:?}", e);
                 BPlusTreeSet::new(BPLUS_TREE_ORDER)
             })
