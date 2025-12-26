@@ -19,11 +19,11 @@ lazy_static! {
     static ref DRIVER_LIST: Vec<(String, String)> = vec![
         (
             ss!("android12-5.10"),
-            ss!("https://vip.123pan.cn/1818969283/ymjew503t0n000d7w32yhlhhtwgv2gjiDIYPBdrzBIi1DvxPAIazAY==.png")
+            ss!("https://vip.123pan.cn/1818969283/yk6baz03t0l000d7w33g2unlxhivfdf0DIYPBdrzBIi1DvxPAIazAY==.png")
         ),
         (
             ss!("android13-5.10"),
-            ss!("https://vip.123pan.cn/1818969283/yk6baz03t0l000d7w33g1mjegbn2qrt0DIYPBdrzBIi1DvxPAIazAY==.png")
+            ss!("https://vip.123pan.cn/1818969283/yk6baz03t0n000d7w33hnttvqpe46b8dDIYPBdrzBIi1DvxPAIazAY==.png")
         ),
         (
             ss!("android13-5.15"),
