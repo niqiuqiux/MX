@@ -99,17 +99,32 @@ object RootPermissionUtils {
      * @return 是否有 root 权限
      */
     fun checkRootAccess(): Boolean {
-        runCatching {
-            val result = RootShellExecutor.exec(suCmd = RootConfigManager.getCustomRootCommand(), "echo test")
-            val hasRoot = result is ShellResult.Success
+        return try {
+            val result = RootShellExecutor.exec(
+                suCmd = RootConfigManager.getCustomRootCommand(),
+                "id -u"
+            )
 
-            Log.d(TAG, "Root access check': $hasRoot")
-            return hasRoot
-        }.onFailure {
-            Log.e(TAG, "Error checking root access", it)
-            return false
+            when (result) {
+                is ShellResult.Success -> {
+                    val uid = result.output.trim()
+                    val hasRoot = uid == "0"
+                    Log.d(TAG, "Root access check - UID: $uid, hasRoot: $hasRoot")
+                    hasRoot
+                }
+                is ShellResult.Error -> {
+                    Log.e(TAG, "Root check failed: ${result.message}")
+                    false
+                }
+                is ShellResult.Timeout -> {
+                    Log.e(TAG, "Root check timeout")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking root access", e)
+            false
         }
-        return false
     }
 
     /**
