@@ -25,7 +25,7 @@ object FloatingEventBus {
 
     // 进程状态变更事件流
     private val _processStateEvents = MutableSharedFlow<ProcessStateEvent>(
-        replay = 1,  // 保留最新状态，新订阅者可以立即获取当前状态
+        replay = 0,  // 1 ？保留最新状态，新订阅者可以立即获取当前状态
         extraBufferCapacity = 4
     )
     val processStateEvents: SharedFlow<ProcessStateEvent> = _processStateEvents.asSharedFlow()
@@ -60,7 +60,7 @@ object FloatingEventBus {
 
     // 导航到内存地址事件流
     private val _navigateToMemoryAddressEvents = MutableSharedFlow<NavigateToMemoryAddressEvent>(
-        replay = 0,
+        replay = 0,  // 1？保留最新事件，确保Tab切换后订阅者能收到
         extraBufferCapacity = 4
     )
     val navigateToMemoryAddressEvents: SharedFlow<NavigateToMemoryAddressEvent> = _navigateToMemoryAddressEvents.asSharedFlow()
