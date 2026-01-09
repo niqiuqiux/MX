@@ -5,21 +5,21 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import moe.fuqiuluo.mamu.R
 import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
-import moe.fuqiuluo.mamu.databinding.DialogAddressActionBinding
+import moe.fuqiuluo.mamu.databinding.DialogAddressActionRvBinding
+import moe.fuqiuluo.mamu.databinding.ItemAddressActionBinding
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
 import moe.fuqiuluo.mamu.utils.ValueTypeUtils
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
 
 /**
- * 地址操作对话框
+ * 地址操作对话框 - 使用 RecyclerView 实现
  */
 class AddressActionDialog(
     context: Context,
@@ -47,6 +47,9 @@ class AddressActionDialog(
         fun onJumpToAddress(address: Long)
     }
 
+    /**
+     * 操作项数据类
+     */
     private data class ActionItem(
         val title: String,
         val icon: Int,
@@ -55,7 +58,7 @@ class AddressActionDialog(
 
     @SuppressLint("SetTextI18n")
     override fun setupDialog() {
-        val binding = DialogAddressActionBinding.inflate(LayoutInflater.from(dialog.context))
+        val binding = DialogAddressActionRvBinding.inflate(LayoutInflater.from(dialog.context))
         dialog.setContentView(binding.root)
 
         // 应用透明度设置
@@ -67,8 +70,28 @@ class AddressActionDialog(
         binding.addressInfoText.text = "地址: 0x${address.toString(16).uppercase()}"
         binding.valueInfoText.text = "值: $value (${valueType.displayName})"
 
-        // 定义操作列表
-        val actions = listOf(
+        // 定义所有操作列表
+        val actions = buildActionList()
+
+        // 设置 RecyclerView
+        binding.actionRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = ActionAdapter(actions)
+            // 添加分隔线
+            addItemDecoration(DividerItemDecoration())
+        }
+
+        // 取消按钮
+        binding.btnCancel.setOnClickListener {
+            dismiss()
+        }
+    }
+
+    /**
+     * 构建操作列表
+     */
+    private fun buildActionList(): List<ActionItem> {
+        return listOf(
             ActionItem("偏移量计算器", R.drawable.calculate_24px) {
                 dismiss()
                 callbacks.onShowOffsetCalculator(address)
@@ -84,7 +107,6 @@ class AddressActionDialog(
                 "跳转到指针: ${"%X".format(value.toLongOrNull() ?: 0)}",
                 R.drawable.icon_arrow_right_alt_24px
             ) {
-                // 跳转到指针地址
                 dismiss()
                 val pointerAddress = value.toLongOrNull() ?: return@ActionItem
                 callbacks.onJumpToAddress(pointerAddress)
@@ -109,20 +131,6 @@ class AddressActionDialog(
                 copyReverseHexValue()
             }
         )
-
-        // 设置ListView适配器
-        val adapter = ActionAdapter(context, actions)
-        binding.actionList.adapter = adapter
-
-        // 列表项点击事件
-        binding.actionList.setOnItemClickListener { _, _, position, _ ->
-            actions[position].action()
-        }
-
-        // 取消按钮
-        binding.btnCancel.setOnClickListener {
-            dismiss()
-        }
     }
 
     /**
@@ -151,9 +159,7 @@ class AddressActionDialog(
      */
     private fun copyHexValue() {
         try {
-            // 将值转换为字节数组
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            // 转换为16进制字符串
             val hexString = bytes.joinToString("") { "%02X".format(it) }
             val clip = ClipData.newPlainText("hex_value", hexString)
             clipboardManager.setPrimaryClip(clip)
@@ -169,9 +175,7 @@ class AddressActionDialog(
      */
     private fun copyReverseHexValue() {
         try {
-            // 将值转换为字节数组
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            // 反转字节顺序并转换为16进制字符串
             val hexString = bytes.reversedArray().joinToString("") { "%02X".format(it) }
             val clip = ClipData.newPlainText("reverse_hex_value", hexString)
             clipboardManager.setPrimaryClip(clip)
@@ -183,24 +187,55 @@ class AddressActionDialog(
     }
 
     /**
-     * ListView适配器
+     * RecyclerView 适配器
      */
-    private class ActionAdapter(
-        context: Context,
+    private inner class ActionAdapter(
         private val actions: List<ActionItem>
-    ) : ArrayAdapter<ActionItem>(context, R.layout.dialog_option_item, actions) {
+    ) : RecyclerView.Adapter<ActionAdapter.ViewHolder>() {
 
-        @SuppressLint("ViewHolder")
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = LayoutInflater.from(context)
-                .inflate(R.layout.dialog_option_item, parent, false) as TextView
+        inner class ViewHolder(
+            private val binding: ItemAddressActionBinding
+        ) : RecyclerView.ViewHolder(binding.root) {
 
-            val action = actions[position]
-            view.text = action.title
-            view.setCompoundDrawablesRelativeWithIntrinsicBounds(action.icon, 0, 0, 0)
-            view.compoundDrawablePadding = 16
+            fun bind(item: ActionItem) {
+                binding.actionTitle.text = item.title
+                binding.actionIcon.setImageResource(item.icon)
+                binding.itemContainer.setOnClickListener {
+                    item.action()
+                }
+            }
+        }
 
-            return view
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val binding = ItemAddressActionBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+            return ViewHolder(binding)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            holder.bind(actions[position])
+        }
+
+        override fun getItemCount(): Int = actions.size
+    }
+
+    /**
+     * 分隔线装饰器
+     */
+    private class DividerItemDecoration : RecyclerView.ItemDecoration() {
+        override fun getItemOffsets(
+            outRect: android.graphics.Rect,
+            view: android.view.View,
+            parent: RecyclerView,
+            state: RecyclerView.State
+        ) {
+            val position = parent.getChildAdapterPosition(view)
+            if (position != parent.adapter?.itemCount?.minus(1)) {
+                outRect.bottom = 1
+            }
         }
     }
 }
