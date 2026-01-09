@@ -330,8 +330,8 @@ class MemoryPreviewController(
             val currentHistoryAddress = if (navigationIndex >= 0 && navigationIndex < navigationHistory.size) {
                 navigationHistory[navigationIndex]
             } else -1L
-            if (pageStartAddress != currentHistoryAddress) {
-                addToNavigationHistory(pageStartAddress)
+            if (requestedAddress != currentHistoryAddress) {
+                addToNavigationHistory(requestedAddress)
             }
         }
 
