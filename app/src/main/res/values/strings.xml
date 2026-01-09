@@ -343,5 +343,6 @@
     <string name="search_history_cleared">搜索历史已清空</string>
     <string name="search_history_deleted">已删除</string>
     <string name="button_delete">删除</string>
+    <string name="close">关闭</string>
 
 </resources>

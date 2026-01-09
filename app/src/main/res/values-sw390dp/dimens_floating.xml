@@ -21,6 +21,7 @@
     <dimen name="floating_height_status_bar">25dp</dimen>
 
     <!-- 图标尺寸 -->
+    <dimen name="floating_icon_ssm">14dp</dimen>
     <dimen name="floating_icon_sm">16dp</dimen>
     <dimen name="floating_icon_md">24dp</dimen>
     <dimen name="floating_icon_tab">26dp</dimen>

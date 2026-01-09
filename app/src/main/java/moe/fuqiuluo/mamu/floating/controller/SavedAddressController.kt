@@ -34,6 +34,7 @@ import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
 import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
 import moe.fuqiuluo.mamu.floating.data.model.SavedAddress
 import moe.fuqiuluo.mamu.floating.dialog.AddressActionDialog
+import moe.fuqiuluo.mamu.floating.dialog.AddressActionSource
 import moe.fuqiuluo.mamu.floating.dialog.BatchModifyValueDialog
 import moe.fuqiuluo.mamu.floating.dialog.ExportAddressDialog
 import moe.fuqiuluo.mamu.floating.dialog.ImportAddressDialog
@@ -49,6 +50,7 @@ import moe.fuqiuluo.mamu.floating.event.UIActionEvent
 import moe.fuqiuluo.mamu.utils.ByteFormatUtils.formatBytes
 import moe.fuqiuluo.mamu.utils.ValueTypeUtils
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
+import moe.fuqiuluo.mamu.widget.RealtimeMonitorOverlay
 import moe.fuqiuluo.mamu.widget.ToolbarAction
 import moe.fuqiuluo.mamu.widget.simpleSingleChoiceDialog
 
@@ -406,6 +408,13 @@ class SavedAddressController(
             ) {
                 exportSelectedAddresses()
             },
+            ToolbarAction(
+                id = 15,
+                icon = R.drawable.icon_visibility_24px,
+                label = "实时监视选中项"
+            ) {
+                showRealtimeMonitorForSelected()
+            },
         )
 
         toolbar.setActions(actions)
@@ -619,7 +628,9 @@ class SavedAddressController(
                         )
                     }
                 }
-            }
+            },
+            source = AddressActionSource.SAVED_ADDRESS,
+            memoryRange = savedAddress.range
         )
 
         dialog.show()
@@ -1327,6 +1338,20 @@ class SavedAddressController(
                 )
             )
         }
+    }
+
+    /**
+     * 显示实时监视悬浮窗（选中的地址）
+     */
+    private fun showRealtimeMonitorForSelected() {
+        val selectedItems = adapter.getSelectedItems()
+        if (selectedItems.isEmpty()) {
+            notification.showError("请先选择要监视的地址")
+            return
+        }
+
+        RealtimeMonitorOverlay(context, selectedItems).show()
+        notification.showSuccess("已添加 ${selectedItems.size} 个地址到实时监视")
     }
 
     private fun updateEmptyState() {

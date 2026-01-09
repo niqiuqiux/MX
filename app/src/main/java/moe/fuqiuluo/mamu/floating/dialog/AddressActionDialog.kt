@@ -15,8 +15,23 @@ import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
 import moe.fuqiuluo.mamu.databinding.DialogAddressActionRvBinding
 import moe.fuqiuluo.mamu.databinding.ItemAddressActionBinding
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
+import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
+import moe.fuqiuluo.mamu.floating.data.model.SavedAddress
 import moe.fuqiuluo.mamu.utils.ValueTypeUtils
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
+import moe.fuqiuluo.mamu.widget.RealtimeMonitorOverlay
+
+/**
+ * 地址操作对话框来源
+ */
+enum class AddressActionSource {
+    /** 搜索结果界面 */
+    SEARCH,
+    /** 内存预览界面 */
+    MEMORY_PREVIEW,
+    /** 保存地址界面 */
+    SAVED_ADDRESS
+}
 
 /**
  * 地址操作对话框 - 使用 RecyclerView 实现
@@ -29,7 +44,9 @@ class AddressActionDialog(
     private val value: String,
     private val valueType: DisplayValueType,
     private val coroutineScope: CoroutineScope,
-    private val callbacks: Callbacks
+    private val callbacks: Callbacks,
+    private val source: AddressActionSource = AddressActionSource.SEARCH,
+    private val memoryRange: MemoryRange? = null
 ) : BaseDialog(context) {
 
     /**
@@ -91,7 +108,7 @@ class AddressActionDialog(
      * 构建操作列表
      */
     private fun buildActionList(): List<ActionItem> {
-        return listOf(
+        val actions = mutableListOf(
             ActionItem("偏移量计算器", R.drawable.calculate_24px) {
                 dismiss()
                 callbacks.onShowOffsetCalculator(address)
@@ -131,7 +148,36 @@ class AddressActionDialog(
                 copyReverseHexValue()
             }
         )
+
+        // 实时监视选项（所有来源都可用）
+        actions.add(ActionItem("实时监视", R.drawable.icon_visibility_24px) {
+            dismiss()
+            showRealtimeMonitor()
+        })
+
+        return actions
     }
+
+    /**
+     * 显示实时监视悬浮窗（单个地址）
+     */
+    private fun showRealtimeMonitor() {
+        val savedAddress = SavedAddress(
+            address = address,
+            name = "",
+            valueType = valueType.nativeId,
+            value = value,
+            isFrozen = false,
+            range = memoryRange ?: MemoryRange.An
+        )
+        RealtimeMonitorOverlay(dialog.context, listOf(savedAddress)).show()
+        notification.showSuccess("已添加实时监视")
+    }
+
+    /**
+     * 获取当前对话框来源
+     */
+    fun getSource(): AddressActionSource = source
 
     /**
      * 复制地址

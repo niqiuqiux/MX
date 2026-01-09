@@ -69,6 +69,7 @@ import moe.fuqiuluo.mamu.utils.RootShellExecutor
 import moe.fuqiuluo.mamu.utils.onError
 import moe.fuqiuluo.mamu.utils.onSuccess
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
+import moe.fuqiuluo.mamu.widget.RealtimeMonitorOverlay
 
 private const val TAG = "FloatingWindowService"
 private const val NOTIFICATION_ID = 1001
@@ -1069,9 +1070,15 @@ class FloatingWindowService : Service(), ProcessDeathMonitor.Callback {
 
         fullscreenView.visibility = View.GONE
         floatingIconView.visibility = View.VISIBLE
+
+        // 恢复显示所有实时监视器
+        RealtimeMonitorOverlay.showAll()
     }
 
     private fun showFullscreen() {
+        // 隐藏所有实时监视器避免干扰
+        RealtimeMonitorOverlay.hideAll()
+
         fullscreenView.visibility = View.VISIBLE
         floatingIconView.visibility = View.GONE
 
