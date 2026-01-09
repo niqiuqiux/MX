@@ -294,6 +294,7 @@ class SearchDialog(
         }
 
         binding.inputValue.setText(searchDialogState.lastInputValue)
+        binding.inputValue.setSelection(searchDialogState.lastInputValue.length)  // 光标移到末尾
         binding.btnValueType.text = currentValueType.displayName
         updateSubtitleRange(currentValueType)
 

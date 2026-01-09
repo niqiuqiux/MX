@@ -61,10 +61,14 @@ class FilterDialog(
         }
 
         // 恢复状态
-        binding.inputMaxDisplayCount.setText(filterDialogState.maxDisplayCount.toString())
+        val maxDisplayCountText = filterDialogState.maxDisplayCount.toString()
+        binding.inputMaxDisplayCount.setText(maxDisplayCountText)
+        binding.inputMaxDisplayCount.setSelection(maxDisplayCountText.length)  // 光标移到末尾
         binding.cbEnableAddressFilter.isChecked = filterDialogState.enableAddressFilter
         binding.inputAddressStart.setText(filterDialogState.addressRangeStart)
+        binding.inputAddressStart.setSelection(filterDialogState.addressRangeStart.length)  // 光标移到末尾
         binding.inputAddressEnd.setText(filterDialogState.addressRangeEnd)
+        binding.inputAddressEnd.setSelection(filterDialogState.addressRangeEnd.length)  // 光标移到末尾
         binding.cbEnableDataTypeFilter.isChecked = filterDialogState.enableDataTypeFilter
 
         // 设置输入框焦点监听

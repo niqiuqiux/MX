@@ -176,6 +176,7 @@ class ModifyValueDialog : BaseDialog {
 
         // 设置初始值
         binding.inputValue.setText(value)
+        binding.inputValue.setSelection(value.length)  // 光标移到末尾
         binding.btnValueType.text = currentValueType.displayName
         updateSubtitleRange(currentValueType)
 

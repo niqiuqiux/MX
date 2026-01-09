@@ -63,6 +63,7 @@ class ExportAddressDialog(
 
         // 设置默认文件名
         binding.inputFileName.setText(defaultFileName)
+        binding.inputFileName.setSelection(defaultFileName.length)  // 光标移到末尾
 
         // 设置保存路径
         binding.textSavePath.text = currentExportPath

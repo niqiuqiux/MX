@@ -90,7 +90,9 @@ class OffsetCalculatorDialog(
 
         // 设置初始基址（如果提供）
         if (initialBaseAddress != null) {
-            binding.inputBaseAddress.setText("%X".format(initialBaseAddress))
+            val addressText = "%X".format(initialBaseAddress)
+            binding.inputBaseAddress.setText(addressText)
+            binding.inputBaseAddress.setSelection(addressText.length)  // 光标移到末尾
             binding.resultAddress.text = "结果: 0x" + initialBaseAddress.toHexString()
         } else {
             binding.resultAddress.text = "结果: 0x0"
