@@ -3,8 +3,10 @@ package moe.fuqiuluo.mamu.utils
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.text.HexFormat
 
 object ValueTypeUtils {
+    private val hexFormat = HexFormat { upperCase = true }
     /**
      * Parse expression string to byte array based on value type
      * @param expr Input expression string
@@ -193,12 +195,12 @@ object ValueTypeUtils {
             }
 
             DisplayValueType.HEX -> {
-                bytes.joinToString("") { "%02X".format(it) }
+                bytes.toHexString(hexFormat)
             }
 
             DisplayValueType.AUTO, DisplayValueType.HEX_MIXED,
             DisplayValueType.ARM, DisplayValueType.ARM64 -> {
-                bytes.joinToString("") { "%02X".format(it) }
+                bytes.toHexString(hexFormat)
             }
         }
     }

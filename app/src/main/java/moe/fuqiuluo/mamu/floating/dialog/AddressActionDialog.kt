@@ -20,6 +20,7 @@ import moe.fuqiuluo.mamu.floating.data.model.SavedAddress
 import moe.fuqiuluo.mamu.utils.ValueTypeUtils
 import moe.fuqiuluo.mamu.widget.NotificationOverlay
 import moe.fuqiuluo.mamu.widget.RealtimeMonitorOverlay
+import kotlin.text.HexFormat
 
 /**
  * 地址操作对话框来源
@@ -104,16 +105,18 @@ class AddressActionDialog(
         }
     }
 
+    private val hexFormat = HexFormat { upperCase = true }
+
     /**
      * 获取值的16进制字符串表示
      */
     private fun getHexString(): String {
         return try {
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            bytes.joinToString("") { "%02X".format(it) }
+            bytes.toHexString(hexFormat)
         } catch (e: Exception) {
             // 回退到简单的整数转换
-            "%X".format(value.toLongOrNull() ?: 0)
+            (value.toLongOrNull() ?: 0).toHexString(hexFormat)
         }
     }
 
@@ -123,10 +126,10 @@ class AddressActionDialog(
     private fun getReverseHexString(): String {
         return try {
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            bytes.reversedArray().joinToString("") { "%02X".format(it) }
+            bytes.reversedArray().toHexString(hexFormat)
         } catch (e: Exception) {
             // 回退到简单的整数转换
-            "%X".format(value.toLongOrNull() ?: 0).reversed()
+            (value.toLongOrNull() ?: 0).toHexString(hexFormat).reversed()
         }
     }
 
@@ -235,7 +238,7 @@ class AddressActionDialog(
     private fun copyHexValue() {
         try {
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            val hexString = bytes.joinToString("") { "%02X".format(it) }
+            val hexString = bytes.toHexString(hexFormat)
             val clip = ClipData.newPlainText("hex_value", hexString)
             clipboardManager.setPrimaryClip(clip)
             notification.showSuccess("已复制16进制: $hexString")
@@ -251,7 +254,7 @@ class AddressActionDialog(
     private fun copyReverseHexValue() {
         try {
             val bytes = ValueTypeUtils.parseExprToBytes(value, valueType)
-            val hexString = bytes.reversedArray().joinToString("") { "%02X".format(it) }
+            val hexString = bytes.reversedArray().toHexString(hexFormat)
             val clip = ClipData.newPlainText("reverse_hex_value", hexString)
             clipboardManager.setPrimaryClip(clip)
             notification.showSuccess("已复制反16进制: $hexString")
