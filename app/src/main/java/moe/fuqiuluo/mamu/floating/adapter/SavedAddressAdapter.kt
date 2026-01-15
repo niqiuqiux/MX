@@ -89,11 +89,55 @@ class SavedAddressAdapter(
             notifyItemRangeRemoved(0, oldSize)
         }
 
-        addresses.addAll(newAddresses)
-        if (newAddresses.isNotEmpty()) {
-            notifyItemRangeInserted(0, newAddresses.size)
+        // 按地址大小排序
+        addresses.addAll(newAddresses.sortedBy { it.address })
+        if (addresses.isNotEmpty()) {
+            notifyItemRangeInserted(0, addresses.size)
         }
         onSelectionChanged(0)
+    }
+
+    /**
+     * 更新地址列表，保留已选中地址的选择状态
+     */
+    fun updateAddresses(newAddresses: List<SavedAddress>) {
+        // 保存当前选中的地址
+        val selectedAddressSet = if (isAllSelected) {
+            // 全选模式：所有地址减去取消选择的
+            addresses.indices
+                .filter { it !in deselectedPositions }
+                .map { addresses[it].address }
+                .toSet()
+        } else {
+            // 手动选择模式：选中的位置对应的地址
+            selectedPositions.mapNotNull { addresses.getOrNull(it)?.address }.toSet()
+        }
+
+        val oldSize = addresses.size
+        addresses.clear()
+
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize)
+        }
+
+        // 按地址大小排序
+        addresses.addAll(newAddresses.sortedBy { it.address })
+        
+        // 恢复选择状态
+        isAllSelected = false
+        selectedPositions.clear()
+        deselectedPositions.clear()
+        
+        addresses.forEachIndexed { index, addr ->
+            if (addr.address in selectedAddressSet) {
+                selectedPositions.add(index)
+            }
+        }
+
+        if (addresses.isNotEmpty()) {
+            notifyItemRangeInserted(0, addresses.size)
+        }
+        onSelectionChanged(getSelectedCount())
     }
 
     fun addAddress(address: SavedAddress) {
@@ -235,10 +279,21 @@ class SavedAddressAdapter(
             binding.nameText.text = address.name
 
             // 设置地址（大写，无0x前缀）
-            binding.addressText.text = String.format("%X", address.address)
+            // 窄屏布局（sw < 390dp）时地址后加冒号，宽屏布局时不加
+            val smallestWidth = context.resources.configuration.smallestScreenWidthDp
+            val addressFormat = if (smallestWidth < 390) "%X:" else "%X"
+            binding.addressText.text = String.format(addressFormat, address.address)
 
-            // 设置值
+            // 设置数据类型和范围
+            val valueType = address.displayValueType ?: DisplayValueType.DWORD
+            binding.typeText.text = valueType.code
+            binding.typeText.setTextColor(valueType.textColor)
+            binding.rangeText.text = address.range.code
+            binding.rangeText.setTextColor(address.range.color)
+
+            // 设置值（颜色根据类型显示）
             binding.valueText.text = address.value.ifBlank { "空空如也" }
+            binding.valueText.setTextColor(valueType.textColor)
 
             // 备份值（旧值）
             val backup = MemoryBackupManager.getBackup(address.address)
@@ -248,13 +303,6 @@ class SavedAddressAdapter(
             } else {
                 binding.backupValueText.visibility = View.GONE
             }
-
-            // 设置数据类型和范围
-            val valueType = address.displayValueType ?: DisplayValueType.DWORD
-            binding.typeText.text = valueType.code
-            binding.typeText.setTextColor(valueType.textColor)
-            binding.rangeText.text = address.range.code
-            binding.rangeText.setTextColor(address.range.color)
 
             // 设置冻结按钮状态
             binding.freezeButton.apply {
@@ -312,9 +360,12 @@ class SavedAddressAdapter(
         }
 
         private fun updateItemBackground(isSelected: Boolean) {
-            binding.itemContainer.setBackgroundColor(
-                if (isSelected) 0x33448AFF else 0x00000000
-            )
+            // 使用前景色来显示选中状态，保留背景的涟漪效果
+            binding.itemContainer.foreground = if (isSelected) {
+                android.graphics.drawable.ColorDrawable(0x33448AFF)
+            } else {
+                null
+            }
         }
     }
 }

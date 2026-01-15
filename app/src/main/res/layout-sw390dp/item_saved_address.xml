@@ -27,6 +27,7 @@
             android:layout_height="36dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -45,6 +46,7 @@
             app:iconPadding="0dp"
             app:iconSize="24dp"
             app:iconTint="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/checkbox"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -59,36 +61,44 @@
             android:maxLines="1"
             android:textColor="@color/floating_text_primary"
             android:textSize="@dimen/floating_text_body"
+            app:layout_constraintBottom_toTopOf="@id/address_text"
             app:layout_constraintEnd_toStartOf="@id/type_text"
             app:layout_constraintStart_toEndOf="@id/freeze_button"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
 
-        <!-- 地址（带冒号） -->
+        <!-- 地址 -->
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/address_text"
             style="@style/FloatingText.Address"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
-            android:text="7FFFFFFF:"
+            android:text="7FFFFFFF"
             android:textSize="@dimen/floating_text_body"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/freeze_button"
             app:layout_constraintTop_toBottomOf="@id/name_text" />
 
-        <!-- 数值（在地址下方单独一行） -->
+        <!-- 数值（在地址右边同一行） -->
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/value_text"
             style="@style/FloatingText.Body"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="8dp"
             android:layout_marginEnd="4dp"
             android:maxLines="1"
             android:text="0"
             android:textSize="@dimen/floating_text_body"
-            app:layout_constraintEnd_toStartOf="@id/type_text"
-            app:layout_constraintStart_toEndOf="@id/freeze_button"
-            app:layout_constraintTop_toBottomOf="@id/address_text" />
+            app:autoSizeMaxTextSize="14sp"
+            app:autoSizeMinTextSize="8sp"
+            app:autoSizeStepGranularity="1sp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintBaseline_toBaselineOf="@id/address_text"
+            app:layout_constraintEnd_toStartOf="@id/backup_value_text"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintStart_toEndOf="@id/address_text" />
 
         <!-- 备份值 -->
         <com.google.android.material.textview.MaterialTextView
@@ -96,14 +106,14 @@
             style="@style/FloatingText.Body"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#88FFFFFF"
             android:textSize="@dimen/floating_text_small"
             android:visibility="gone"
-            app:layout_constraintBaseline_toBaselineOf="@id/value_text"
-            app:layout_constraintStart_toEndOf="@id/value_text" />
+            app:layout_constraintBaseline_toBaselineOf="@id/address_text"
+            app:layout_constraintEnd_toStartOf="@id/range_text" />
 
         <!-- 类型 -->
         <com.google.android.material.textview.MaterialTextView
@@ -113,8 +123,10 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:text="D"
+            app:layout_constraintBottom_toTopOf="@id/range_text"
             app:layout_constraintEnd_toStartOf="@id/delete_button"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
 
         <!-- 范围 -->
         <com.google.android.material.textview.MaterialTextView
@@ -124,6 +136,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:text="B"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/delete_button"
             app:layout_constraintTop_toBottomOf="@id/type_text" />
 
@@ -143,6 +156,7 @@
             app:iconPadding="0dp"
             app:iconSize="20dp"
             app:iconTint="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

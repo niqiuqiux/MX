@@ -174,9 +174,11 @@ class ModifyValueDialog : BaseDialog {
             binding.subtitleRange.text = type.rangeDescription
         }
 
-        // 设置初始值
+        // 设置初始值并全选，方便直接替换
         binding.inputValue.setText(value)
-        binding.inputValue.setSelection(value.length)  // 光标移到末尾
+        if (value.isNotEmpty()) {
+            binding.inputValue.selectAll()
+        }
         binding.btnValueType.text = currentValueType.displayName
         updateSubtitleRange(currentValueType)
 
@@ -208,6 +210,9 @@ class ModifyValueDialog : BaseDialog {
 
                 // 使用 Editable.replace() 直接替换选中的文本
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                binding.inputValue.setSelection(newCursorPos)
             }
 
             override fun onDelete() {

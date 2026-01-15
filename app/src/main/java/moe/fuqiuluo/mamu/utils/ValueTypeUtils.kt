@@ -176,13 +176,13 @@ object ValueTypeUtils {
 
             DisplayValueType.FLOAT -> {
                 if (bytes.size >= 4) {
-                    buffer.float.toString()
+                    "%.6g".format(buffer.float)
                 } else ""
             }
 
             DisplayValueType.DOUBLE -> {
                 if (bytes.size >= 8) {
-                    buffer.double.toString()
+                    "%.10g".format(buffer.double)
                 } else ""
             }
 

@@ -27,6 +27,7 @@ import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
 import moe.fuqiuluo.mamu.data.settings.keyboardType
 import moe.fuqiuluo.mamu.databinding.DialogOffsetCalculatorBinding
 import moe.fuqiuluo.mamu.driver.Disassembler
+import moe.fuqiuluo.mamu.floating.data.local.InputHistoryManager
 import moe.fuqiuluo.mamu.floating.data.model.DisplayMemRegionEntry
 import moe.fuqiuluo.mamu.floating.data.model.FormattedValue
 import moe.fuqiuluo.mamu.floating.data.model.MemoryDisplayFormat
@@ -58,10 +59,11 @@ class OffsetCalculatorDialog(
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var executionResult: ExecutionResult? = null
     private var calculateJob: Job? = null
+    private lateinit var binding: DialogOffsetCalculatorBinding
 
     @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
     override fun setupDialog() {
-        val binding = DialogOffsetCalculatorBinding.inflate(LayoutInflater.from(dialog.context))
+        binding = DialogOffsetCalculatorBinding.inflate(LayoutInflater.from(dialog.context))
         dialog.setContentView(binding.root)
 
         // 应用透明度设置
@@ -95,8 +97,19 @@ class OffsetCalculatorDialog(
             binding.inputBaseAddress.setSelection(addressText.length)  // 光标移到末尾
             binding.resultAddress.text = "结果: 0x" + initialBaseAddress.toHexString()
         } else {
+            // 恢复上次输入的基址并全选
+            InputHistoryManager.restoreAndSelectAll(
+                binding.inputBaseAddress,
+                InputHistoryManager.Keys.OFFSET_CALCULATOR_BASE
+            )
             binding.resultAddress.text = "结果: 0x0"
         }
+        
+        // 恢复上次输入的偏移表达式并全选
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputExpression,
+            InputHistoryManager.Keys.OFFSET_CALCULATOR_OFFSET
+        )
 
         val spannable = SpannableStringBuilder()
         spannable.appendColored("-h; ", MemoryDisplayFormat.HEX_BIG_ENDIAN.textColor)
@@ -132,6 +145,9 @@ class OffsetCalculatorDialog(
 
         // 取消按钮
         binding.btnCancel.setOnClickListener {
+            // 保存输入内容
+            InputHistoryManager.saveFromEditText(binding.inputBaseAddress, InputHistoryManager.Keys.OFFSET_CALCULATOR_BASE)
+            InputHistoryManager.saveFromEditText(binding.inputExpression, InputHistoryManager.Keys.OFFSET_CALCULATOR_OFFSET)
             onCancel?.invoke()
             dialog.dismiss()
         }
@@ -164,6 +180,9 @@ class OffsetCalculatorDialog(
                 val selectionStart = input.selectionStart
                 val selectionEnd = input.selectionEnd
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                input.setSelection(newCursorPos)
             }
 
             override fun onDelete() {
@@ -649,6 +668,10 @@ class OffsetCalculatorDialog(
             notification.showError("无法跳转：地址无效")
             return
         }
+
+        // 保存输入内容
+        InputHistoryManager.saveFromEditText(binding.inputBaseAddress, InputHistoryManager.Keys.OFFSET_CALCULATOR_BASE)
+        InputHistoryManager.saveFromEditText(binding.inputExpression, InputHistoryManager.Keys.OFFSET_CALCULATOR_OFFSET)
 
         coroutineScope.launch {
             // 使用 JumpToMemoryPreview 事件，会先切换到内存预览 Tab 再跳转

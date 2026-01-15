@@ -20,6 +20,7 @@ import moe.fuqiuluo.mamu.driver.MemoryRegionInfo
 import moe.fuqiuluo.mamu.driver.PointerChainResult
 import moe.fuqiuluo.mamu.driver.PointerScanner
 import moe.fuqiuluo.mamu.driver.WuwaDriver
+import moe.fuqiuluo.mamu.floating.data.local.InputHistoryManager
 import moe.fuqiuluo.mamu.floating.data.model.DisplayMemRegionEntry
 import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
 import moe.fuqiuluo.mamu.floating.event.FloatingEventBus
@@ -60,7 +61,27 @@ class PointerScanDialog(
         val opacity = mmkv.getDialogOpacity()
         binding.rootContainer.background?.alpha = (opacity * 255).toInt()
 
+        // 恢复上次输入内容并全选
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputTargetAddress,
+            InputHistoryManager.Keys.POINTER_SCAN_ADDRESS
+        )
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputMaxDepth,
+            InputHistoryManager.Keys.POINTER_SCAN_DEPTH,
+            "5"
+        )
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputMaxOffset,
+            InputHistoryManager.Keys.POINTER_SCAN_OFFSET,
+            "1000"
+        )
+
         binding.btnCancel.setOnClickListener {
+            // 保存输入内容
+            InputHistoryManager.saveFromEditText(binding.inputTargetAddress, InputHistoryManager.Keys.POINTER_SCAN_ADDRESS)
+            InputHistoryManager.saveFromEditText(binding.inputMaxDepth, InputHistoryManager.Keys.POINTER_SCAN_DEPTH)
+            InputHistoryManager.saveFromEditText(binding.inputMaxOffset, InputHistoryManager.Keys.POINTER_SCAN_OFFSET)
             onCancel?.invoke()
             dialog.dismiss()
         }
@@ -108,6 +129,11 @@ class PointerScanDialog(
                 notification.showError(context.getString(R.string.error_process_not_bound))
                 return@setOnClickListener
             }
+
+            // 保存输入内容
+            InputHistoryManager.save(InputHistoryManager.Keys.POINTER_SCAN_ADDRESS, addressText)
+            InputHistoryManager.saveFromEditText(binding.inputMaxDepth, InputHistoryManager.Keys.POINTER_SCAN_DEPTH)
+            InputHistoryManager.saveFromEditText(binding.inputMaxOffset, InputHistoryManager.Keys.POINTER_SCAN_OFFSET)
 
             dialog.dismiss()
             startPointerScan(targetAddress, maxDepth, maxOffset, maxResults, isLayerBFS)

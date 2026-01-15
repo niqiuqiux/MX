@@ -14,6 +14,7 @@ import moe.fuqiuluo.mamu.driver.FuzzySearchResultItem
 import moe.fuqiuluo.mamu.driver.SearchResultItem
 import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
 import moe.fuqiuluo.mamu.data.settings.keyboardType
+import moe.fuqiuluo.mamu.floating.data.local.InputHistoryManager
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
 import moe.fuqiuluo.mamu.floating.data.model.SavedAddress
 import moe.fuqiuluo.mamu.widget.BuiltinKeyboard
@@ -112,8 +113,11 @@ class BatchModifyValueDialog private constructor(
             binding.subtitleRange.text = type.rangeDescription
         }
 
-        // 设置初始值为空，让用户输入
-        binding.inputValue.setText("")
+        // 设置初始值：恢复上次输入并全选
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputValue,
+            InputHistoryManager.Keys.BATCH_MODIFY_VALUE
+        )
         binding.btnValueType.text = currentValueType.displayName
         updateSubtitleRange(currentValueType)
 
@@ -145,6 +149,9 @@ class BatchModifyValueDialog private constructor(
 
                 // 使用 Editable.replace() 直接替换选中的文本
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                binding.inputValue.setSelection(newCursorPos)
             }
 
             override fun onDelete() {
@@ -202,6 +209,7 @@ class BatchModifyValueDialog private constructor(
         }
 
         binding.btnCancel.setOnClickListener {
+            InputHistoryManager.saveFromEditText(binding.inputValue, InputHistoryManager.Keys.BATCH_MODIFY_VALUE)
             onCancel?.invoke()
             dialog.dismiss()
         }
@@ -214,6 +222,9 @@ class BatchModifyValueDialog private constructor(
                 notification.showError(context.getString(R.string.error_empty_search_value))
                 return@setOnClickListener
             }
+
+            // 保存输入内容
+            InputHistoryManager.save(InputHistoryManager.Keys.BATCH_MODIFY_VALUE, newValue)
 
             // 根据数据类型调用对应的回调
             searchResultItems?.let {

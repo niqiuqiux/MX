@@ -11,6 +11,7 @@ import moe.fuqiuluo.mamu.driver.ExactSearchResultItem
 import moe.fuqiuluo.mamu.driver.FuzzySearchResultItem
 import moe.fuqiuluo.mamu.driver.SearchResultItem
 import moe.fuqiuluo.mamu.driver.WuwaDriver
+import moe.fuqiuluo.mamu.floating.data.local.InputHistoryManager
 import moe.fuqiuluo.mamu.floating.data.model.DisplayMemRegionEntry
 import moe.fuqiuluo.mamu.floating.data.model.DisplayValueType
 import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
@@ -61,9 +62,13 @@ class ExportAddressDialog(
         val opacity = mmkv.getDialogOpacity()
         binding.rootContainer.background?.alpha = (opacity * 255).toInt()
 
-        // 设置默认文件名
-        binding.inputFileName.setText(defaultFileName)
-        binding.inputFileName.setSelection(defaultFileName.length)  // 光标移到末尾
+        // 设置默认文件名：优先使用历史记录，否则使用默认值
+        val savedFileName = InputHistoryManager.get(InputHistoryManager.Keys.EXPORT_FILENAME)
+        val fileNameToSet = savedFileName.ifEmpty { defaultFileName }
+        binding.inputFileName.setText(fileNameToSet)
+        if (fileNameToSet.isNotEmpty()) {
+            binding.inputFileName.selectAll()
+        }
 
         // 设置保存路径
         binding.textSavePath.text = currentExportPath
@@ -86,6 +91,7 @@ class ExportAddressDialog(
 
         // 取消按钮
         binding.btnCancel.setOnClickListener {
+            InputHistoryManager.saveFromEditText(binding.inputFileName, InputHistoryManager.Keys.EXPORT_FILENAME)
             onCancel?.invoke()
             dialog.dismiss()
         }
@@ -97,6 +103,9 @@ class ExportAddressDialog(
                 notification.showWarning("请输入文件名")
                 return@setOnClickListener
             }
+            
+            // 保存文件名
+            InputHistoryManager.save(InputHistoryManager.Keys.EXPORT_FILENAME, fileName)
 
             performExport(fileName)
             dialog.dismiss()

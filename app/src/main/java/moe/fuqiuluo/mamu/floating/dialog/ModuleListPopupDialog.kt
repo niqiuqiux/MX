@@ -28,6 +28,7 @@ class ModuleListPopupDialog(
     context: Context,
     private val title: String,
     private val modules: List<DisplayMemRegionEntry>,
+    private val highlightModule: DisplayMemRegionEntry? = null,
     private val onModuleSelected: (DisplayMemRegionEntry) -> Unit
 ) : BaseDialog(context) {
 
@@ -40,6 +41,7 @@ class ModuleListPopupDialog(
 
     private var filteredModules: List<DisplayMemRegionEntry> = modules
     private var adapter: ModuleListAdapter? = null
+    private var listView: ListView? = null
 
     @SuppressLint("SetTextI18n")
     override fun setupDialog() {
@@ -62,10 +64,12 @@ class ModuleListPopupDialog(
             showPermission = showPermission,
             showMemory = showMemory,
             showPath = showPath,
-            showStart = showStart
+            showStart = showStart,
+            highlightModule = highlightModule
         )
         binding.moduleList.adapter = adapter
         binding.moduleList.choiceMode = ListView.CHOICE_MODE_NONE
+        listView = binding.moduleList
 
         binding.moduleList.setOnItemClickListener { _, _, position, _ ->
             val selectedModule = filteredModules[position]
@@ -79,6 +83,21 @@ class ModuleListPopupDialog(
         // 关闭按钮
         binding.btnClose.setOnClickListener {
             dialog.dismiss()
+        }
+
+        // 如果有高亮模块，滚动到该位置
+        if (highlightModule != null) {
+            binding.moduleList.post {
+                scrollToHighlightModule()
+            }
+        }
+    }
+
+    private fun scrollToHighlightModule() {
+        val targetModule = highlightModule ?: return
+        val position = filteredModules.indexOfFirst { it.start == targetModule.start }
+        if (position >= 0) {
+            listView?.setSelection(position)
         }
     }
 
@@ -141,8 +160,15 @@ class ModuleListPopupDialog(
             modules
         }
 
-        adapter?.updateData(filteredModules, showPermission, showMemory, showPath, showStart)
+        adapter?.updateData(filteredModules, showPermission, showMemory, showPath, showStart, highlightModule)
         updateCount(binding)
+        
+        // 筛选后重新滚动到高亮模块
+        if (highlightModule != null) {
+            binding.moduleList.post {
+                scrollToHighlightModule()
+            }
+        }
     }
 
     /**
@@ -154,7 +180,8 @@ class ModuleListPopupDialog(
         private var showPermission: Boolean,
         private var showMemory: Boolean,
         private var showPath: Boolean,
-        private var showStart: Boolean
+        private var showStart: Boolean,
+        private var highlightModule: DisplayMemRegionEntry? = null
     ) : BaseAdapter() {
 
         fun updateData(
@@ -162,13 +189,15 @@ class ModuleListPopupDialog(
             showPermission: Boolean,
             showMemory: Boolean,
             showPath: Boolean,
-            showStart: Boolean
+            showStart: Boolean,
+            highlightModule: DisplayMemRegionEntry? = null
         ) {
             this.modules = newModules
             this.showPermission = showPermission
             this.showMemory = showMemory
             this.showPath = showPath
             this.showStart = showStart
+            this.highlightModule = highlightModule
             notifyDataSetChanged()
         }
 
@@ -252,8 +281,14 @@ class ModuleListPopupDialog(
             }
 
             holder.contentText.text = spannable
-            // 去除背景色，使用透明
-            holder.itemContainer.setBackgroundColor(Color.TRANSPARENT)
+            
+            // 如果是高亮模块，设置高亮背景色
+            val isHighlighted = highlightModule != null && module.start == highlightModule?.start
+            if (isHighlighted) {
+                holder.itemContainer.setBackgroundColor(0x33448AFF) // 半透明蓝色高亮
+            } else {
+                holder.itemContainer.setBackgroundColor(Color.TRANSPARENT)
+            }
 
             return view
         }

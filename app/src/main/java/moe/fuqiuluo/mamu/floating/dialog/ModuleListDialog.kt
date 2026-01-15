@@ -11,6 +11,7 @@ import com.tencent.mmkv.MMKV
 import moe.fuqiuluo.mamu.data.settings.getDialogOpacity
 import moe.fuqiuluo.mamu.data.settings.keyboardType
 import moe.fuqiuluo.mamu.databinding.DialogModuleListBinding
+import moe.fuqiuluo.mamu.floating.data.local.InputHistoryManager
 import moe.fuqiuluo.mamu.floating.data.model.DisplayMemRegionEntry
 import moe.fuqiuluo.mamu.floating.data.model.MemoryRange
 import moe.fuqiuluo.mamu.widget.BuiltinKeyboard
@@ -72,11 +73,18 @@ class ModuleListDialog(
         // 设置输入框焦点
         currentFocusedInput = binding.inputAddress
         binding.inputAddress.requestFocus()
+        
+        // 恢复上次输入内容并全选
+        InputHistoryManager.restoreAndSelectAll(
+            binding.inputAddress, 
+            InputHistoryManager.Keys.MODULE_ADDRESS
+        )
 
         // 设置展示按钮（跳转到地址对应模块）
         binding.btnShowModule.setOnClickListener {
             val input = binding.inputAddress.text.toString().trim()
             if (input.isNotEmpty()) {
+                InputHistoryManager.save(InputHistoryManager.Keys.MODULE_ADDRESS, input)
                 showModuleAtAddress(input)
             }
         }
@@ -99,6 +107,7 @@ class ModuleListDialog(
 
         // 取消按钮
         binding.btnCancel.setOnClickListener {
+            InputHistoryManager.saveFromEditText(binding.inputAddress, InputHistoryManager.Keys.MODULE_ADDRESS)
             onCancel?.invoke()
             dialog.dismiss()
         }
@@ -107,6 +116,7 @@ class ModuleListDialog(
         binding.btnGoto.setOnClickListener {
             val input = binding.inputAddress.text.toString().trim()
             if (input.isNotEmpty()) {
+                InputHistoryManager.save(InputHistoryManager.Keys.MODULE_ADDRESS, input)
                 gotoAddress(input)
             }
         }
@@ -172,21 +182,19 @@ class ModuleListDialog(
             val address = input.toLong(16)
             val targetModule = modules.find { it.start <= address && address < it.end }
             if (targetModule != null) {
-                // 显示该模块附近的模块列表
-                val targetIndex = modules.indexOf(targetModule)
-                val startIndex = (targetIndex - 10).coerceAtLeast(0)
-                val endIndex = (targetIndex + 10).coerceAtMost(modules.size)
-                val nearbyModules = modules.subList(startIndex, endIndex)
-
+                // 显示全部模块列表，高亮并聚焦到目标模块
                 ModuleListPopupDialog(
                     context,
-                    "地址 ${input.uppercase()} 附近",
-                    nearbyModules
+                    "地址 ${input.uppercase()} 所在模块",
+                    modules,
+                    highlightModule = targetModule
                 ) { selectedModule ->
                     addToHistory(selectedModule)
                     onModuleSelected(selectedModule)
                     dialog.dismiss()
                 }.show()
+            } else {
+                notification.showWarning("未找到包含该地址的模块")
             }
         } catch (e: Exception) {
             notification.showError("地址格式错误")
@@ -222,6 +230,9 @@ class ModuleListDialog(
                 val selectionStart = input.selectionStart
                 val selectionEnd = input.selectionEnd
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                input.setSelection(newCursorPos)
             }
 
             override fun onDelete() {

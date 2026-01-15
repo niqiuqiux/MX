@@ -267,7 +267,7 @@ class SavedAddressController(
                         range = range
                     )
                     savedAddresses.add(newAddress)
-                    adapter.setAddresses(savedAddresses)
+                    adapter.updateAddresses(savedAddresses)
                     updateEmptyState()
                     updateAddressCountBadge()
                     updateSavedCountText()
@@ -540,7 +540,7 @@ class SavedAddressController(
                 savedAddresses.add(newAddr)
             }
         }
-        adapter.setAddresses(savedAddresses)
+        adapter.updateAddresses(savedAddresses)
         updateEmptyState()
         updateAddressCountBadge()
         updateSavedCountText()

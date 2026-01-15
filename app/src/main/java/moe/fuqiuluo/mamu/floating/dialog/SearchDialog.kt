@@ -294,7 +294,10 @@ class SearchDialog(
         }
 
         binding.inputValue.setText(searchDialogState.lastInputValue)
-        binding.inputValue.setSelection(searchDialogState.lastInputValue.length)  // 光标移到末尾
+        // 如果有内容，全选方便直接删除或替换
+        if (searchDialogState.lastInputValue.isNotEmpty()) {
+            binding.inputValue.selectAll()
+        }
         binding.btnValueType.text = currentValueType.displayName
         updateSubtitleRange(currentValueType)
 
@@ -328,6 +331,9 @@ class SearchDialog(
                 val selectionStart = binding.inputValue.selectionStart
                 val selectionEnd = binding.inputValue.selectionEnd
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                binding.inputValue.setSelection(newCursorPos)
             }
 
             override fun onDelete() {

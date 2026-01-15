@@ -63,12 +63,18 @@ class FilterDialog(
         // 恢复状态
         val maxDisplayCountText = filterDialogState.maxDisplayCount.toString()
         binding.inputMaxDisplayCount.setText(maxDisplayCountText)
-        binding.inputMaxDisplayCount.setSelection(maxDisplayCountText.length)  // 光标移到末尾
+        if (maxDisplayCountText.isNotEmpty()) {
+            binding.inputMaxDisplayCount.selectAll()
+        }
         binding.cbEnableAddressFilter.isChecked = filterDialogState.enableAddressFilter
         binding.inputAddressStart.setText(filterDialogState.addressRangeStart)
-        binding.inputAddressStart.setSelection(filterDialogState.addressRangeStart.length)  // 光标移到末尾
+        if (filterDialogState.addressRangeStart.isNotEmpty()) {
+            binding.inputAddressStart.selectAll()
+        }
         binding.inputAddressEnd.setText(filterDialogState.addressRangeEnd)
-        binding.inputAddressEnd.setSelection(filterDialogState.addressRangeEnd.length)  // 光标移到末尾
+        if (filterDialogState.addressRangeEnd.isNotEmpty()) {
+            binding.inputAddressEnd.selectAll()
+        }
         binding.cbEnableDataTypeFilter.isChecked = filterDialogState.enableDataTypeFilter
 
         // 设置输入框焦点监听
@@ -150,6 +156,9 @@ class FilterDialog(
 
                 // 使用 Editable.replace() 直接替换选中的文本
                 editable.replace(selectionStart, selectionEnd, key)
+                // 输入后将光标移动到新插入文本的末尾，取消选择状态
+                val newCursorPos = selectionStart + key.length
+                input.setSelection(newCursorPos)
             }
 
             override fun onDelete() {
